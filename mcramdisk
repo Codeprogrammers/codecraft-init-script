@@ -1,0 +1,16 @@
+#!/bin/bash
+# /etc/init.d/mcramdisk
+# version 0.1.0 2011-11-05 (YYYY-MM-DD)
+
+### BEGIN INIT INFO
+# Provides:   minecraft_ramdisk
+# Required-Start: $local_fs $remote_fs
+# Required-Stop:  $local_fs $remote_fs
+# Should-Start:   
+# Should-Stop:    
+# Default-Start:  2 3 4 5
+# Default-Stop:   0 1 6
+# Short-Description:    Ramdisk for Minecraft
+# Description:    Makes a Ramdisk for a Minecraft server
+### END INIT INFO
+

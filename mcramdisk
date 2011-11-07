@@ -16,8 +16,8 @@
 
 #Variables
 USERNAME="minecraft"
-RD_PATH='/opt/codecraft/ramdisk'
-RD_SIZE='64M'
+RD_PATH='/mnt/codecraft/ramdisk'
+RD_SIZE='256M'
 
 #Force all commands to be run as $USERNAME
 ME=`whoami`

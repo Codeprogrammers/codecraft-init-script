@@ -55,3 +55,17 @@ mc_start() {
     fi
   fi
 }
+
+mc_saveoff() {
+  if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
+  then
+    echo "$SERVICE is running... suspending saves"
+    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $SAVE-OFF_MSG\"\015'"
+    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-off\"\015'"
+    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-all\"\015'"
+    sync
+    sleep 10
+  else
+    echo "$SERVICE was not running. Not suspending saves."
+  fi
+}

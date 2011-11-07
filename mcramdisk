@@ -61,3 +61,31 @@ mcrd_stop() {
     echo "Ramdisk unmounted"
   fi
 }
+
+#Start-Stop here
+case "$1" in
+  start)
+    mc_start
+    ;;
+  stop)
+    mc_stop
+    ;;
+  reset)
+    mc_stop
+    mc_start
+    ;;
+  status)
+    if mount -l -t tmpfs | grep $RD_PATH > /dev/null
+    then
+      echo "Ramdisk mounted at $RD_PATH"
+    else
+      echo "Ramdisk is not mounted"
+    fi
+    ;;
+    *)
+  echo "Usage: mcramdisk {start|stop|reset|status}"
+  exit 1
+  ;;
+esac
+
+exit 0

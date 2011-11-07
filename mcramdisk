@@ -14,3 +14,7 @@
 # Description:    Makes a Ramdisk for a Minecraft server
 ### END INIT INFO
 
+#Settings
+RD_PATH='/mnt/codecraft/ramdisk'
+RD_SIZE='256M'
+

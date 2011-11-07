@@ -25,8 +25,8 @@ WORLD_PATH='/mnt/codecraft/worlds'
 WORLD_BACKUPPATH='/mnt/codecraft/archives/worlds'
 SERVER_BACKUPPATH='/mnt/codecraft/archives/servers'
 INVOCATION="java -Xms512M -Xmx2048M -jar craftbukkit.jar"
-SAVE-OFF_MSG="SERVER BACKUP STARTING. Server going readonly..."
-SAVE-ON_MSG=""
+SAVE_OFF_MSG="SERVER BACKUP STARTING. Server going readonly..."
+SAVE_ON_MSG="SERVER BACKUP ENDED. Server going read-write..."
 STOP_MSG=""
 
 ME=`whoami`
@@ -60,7 +60,7 @@ mc_saveoff() {
   if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
   then
     echo "$SERVICE is running... suspending saves"
-    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $SAVE-OFF_MSG\"\015'"
+    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $SAVE_OFF_MSG\"\015'"
     as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-off\"\015'"
     as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-all\"\015'"
     sync
@@ -68,4 +68,15 @@ mc_saveoff() {
   else
     echo "$SERVICE was not running. Not suspending saves."
   fi
+}
+
+mc_saveon() {
+  if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
+	then
+		echo "$SERVICE is running... re-enabling saves"
+    as_user "screen -p 0 -S codecraft -X eval 'stuff \"save-on\"\015'"
+    as_user "screen -p 0 -S codecraft -X eval 'stuff \"say $SAVE_ON_MSG\"\015'"
+	else
+    echo "$SERVICE was not running. Not resuming saves."
+	fi
 }

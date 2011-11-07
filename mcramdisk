@@ -1,6 +1,6 @@
 #!/bin/bash
 # /etc/init.d/mcramdisk
-# version 0.1.0 2011-11-05 (YYYY-MM-DD)
+# version 1.0.0 2011-11-07 (YYYY-MM-DD)
 
 ### BEGIN INIT INFO
 # Provides:   minecraft_ramdisk
@@ -14,11 +14,12 @@
 # Description:    Makes a Ramdisk for a Minecraft server
 ### END INIT INFO
 
-#Settings
+#Variables
 USERNAME="minecraft"
 RD_PATH='/mnt/codecraft/ramdisk'
 RD_SIZE='256M'
 
+#Force all commands to be run as $USERNAME
 ME=`whoami`
 as_user() {
   if [ $ME == $USERNAME ] ; then
@@ -27,6 +28,7 @@ as_user() {
     su - $USERNAME -c "$1"
   fi
 
+# Mount the Ramdisk at $RD_PATH
 mcrd_start() {
   if mount -l -t tmpfs | grep $RD_PATH > /dev/null
   then 
@@ -44,6 +46,7 @@ mcrd_start() {
   fi
 }
 
+# Unmount the ramdisk
 mcrd_stop() {
   if mount -l -t tmpfs | grep $RD_PATH > /dev/null
   then
@@ -62,12 +65,12 @@ mcrd_stop() {
   fi
 }
 
-#Start-Stop here
+# Commands
 case "$1" in
-  start)
+  mount)
     mc_start
     ;;
-  stop)
+  umount)
     mc_stop
     ;;
   reset)
@@ -83,7 +86,8 @@ case "$1" in
     fi
     ;;
     *)
-  echo "Usage: mcramdisk {start|stop|reset|status}"
+  echo "Usage: mcramdisk {mount|umount|reset|status}"
+  echo "BE CARFUL WITH THE RESET COMMAND. IT WILL UNMOUNT THE RAMDISK"
   exit 1
   ;;
 esac

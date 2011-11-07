@@ -1,0 +1,49 @@
+####
+#
+# Codeprogrammers.net
+#
+# These scripts are free to use and modify as you see fit. But please,
+# don't copy them word-for-word and claim them as your own. That's just
+# rude. :'(
+#
+###
+
+######
+Notes:
+######
+
+mcramdisk:
+----------
+This script won't work unless the $USERNAME variable is set to root (so
+it probably won't work in Ubuntu by default).
+You can allow it to be run by other users if you give said users
+permission to use the 'mount' command (but this poses security risks).
+
+Also, be careful with the 'mcradmisk reset' command while your minecraft
+server is running. Under normal circumstances, you should NEVER need to 
+use this command. But, in the event that you need to clean the directory
+for whatever reason, it serves as a quick means of doing so. It's better
+than using rm -f since you don't need to provide a location. :D
+
+Keep in mind though: running your minecraft instance in a ramdisk is not
+a fail-safe security practice. One needs only gain command-line access
+to your server to kill your running instance of minecraft (assuming you
+gave the user account declared in the $USERNAME variable in the mcramdisk
+script the permission to use 'mount'. If not, they'd obviously still need
+to gain root access). Not to mention that a ramdisk will guarantee a loss
+of data in the event of a power outages or system crash.
+
+Therefor, children, always be sure to make backups at least bi-hourly when
+storing sensitive data on a ramdisk.
+
+Luckily, the 'minecraft' init script is (or will be soon) set up to make
+backups of sensitive data every 15 minutes. Though it will (or soon will
+be) configurable in that respect.
+
+This has ben a friendly lesson in cyber security by Toasty27.
+
+
+minecraft:
+----------
+
+Currently being worked on

@@ -25,3 +25,10 @@ WORLD_BACKUPPATH='/mnt/codecraft/archives/worlds'
 SERVER_BACKUPPATH='/mnt/codecraft/archives/servers'
 INVOCATION="java -Xms512M -Xmx2048M -jar craftbukkit.jar"
 
+ME=`whoami`
+as_user() {
+  if [ $ME == $USERNAME ] ; then
+    bash -c "$1"
+  else
+    su - $USERNAME -c "$1"
+  fi

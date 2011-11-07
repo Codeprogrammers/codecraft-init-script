@@ -14,8 +14,7 @@ Notes:
 
 mcramdisk:
 ----------
-This script won't work unless the $USERNAME variable is set to root (so
-it probably won't work in Ubuntu by default).
+This script won't work unless the $USERNAME variable is set to root.
 You can allow it to be run by other users if you give said users
 permission to use the 'mount' command (but this poses security risks).
 

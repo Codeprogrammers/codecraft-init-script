@@ -34,7 +34,7 @@ mcrd_start() {
   else
     echo "Mounting Ramdisk at $RD_PATH"
     as_user "mount -t tmpfs -o size=$RD_SIZE tmpfs $RD_PATH"
-    sleep 7
+    sleep 5
     if mount -l -t tmpfs | grep $RD_PATH > /dev/null
     then 
       echo "Ramdisk mounted at $RD_PATH"

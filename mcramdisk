@@ -16,8 +16,8 @@
 
 #Variables
 USERNAME="minecraft"
-RD_PATH='/mnt/codecraft/ramdisk'
-RD_SIZE='256M'
+RD_PATH='/opt/codecraft/ramdisk'
+RD_SIZE='64M'
 
 #Force all commands to be run as $USERNAME
 ME=`whoami`
@@ -27,9 +27,10 @@ as_user() {
   else
     su - $USERNAME -c "$1"
   fi
+}
 
 # Mount the Ramdisk at $RD_PATH
-mcrd_start() {
+mcrd_mount() {
   if mount -l -t tmpfs | grep $RD_PATH > /dev/null
   then 
     echo "Ramdisk already mounted"
@@ -47,7 +48,7 @@ mcrd_start() {
 }
 
 # Unmount the ramdisk
-mcrd_stop() {
+mcrd_unmount() {
   if mount -l -t tmpfs | grep $RD_PATH > /dev/null
   then
     echo "Ramdisk mounted at $RD_PATH.... unmounting"
@@ -68,14 +69,14 @@ mcrd_stop() {
 # Commands
 case "$1" in
   mount)
-    mc_start
+    mcrd_mount
     ;;
   umount)
-    mc_stop
+    mcrd_unmount
     ;;
   reset)
-    mc_stop
-    mc_start
+    mcrd_unmount
+    mcrd_mount
     ;;
   status)
     if mount -l -t tmpfs | grep $RD_PATH > /dev/null

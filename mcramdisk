@@ -27,4 +27,18 @@ as_user() {
     su - $USERNAME -c "$1"
   fi
 
-
+mcrd_start() {
+  if mount -l -t tmpfs | grep $RD_PATH > /dev/null
+  then 
+    echo "Ramdisk already mounted"
+  else
+    echo "Mounting Ramdisk at $RD_PATH"
+    as_user "mount -t tmpfs -o size=$RD_SIZE tmpfs $RD_PATH"
+    sleep 7
+    if mount -l -t tmpfs | grep $RD_PATH > /dev/null
+    then 
+      echo "Ramdisk mounted at $RD_PATH"
+    else
+      echo "Could not mount Ramdisk. Does $RD_PATH exist?"
+    fi
+  fi

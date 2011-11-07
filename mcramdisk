@@ -34,7 +34,7 @@ mcrd_start() {
   else
     echo "Mounting Ramdisk at $RD_PATH"
     as_user "mount -t tmpfs -o size=$RD_SIZE tmpfs $RD_PATH"
-    sleep 5
+    sleep 3
     if mount -l -t tmpfs | grep $RD_PATH > /dev/null
     then 
       echo "Ramdisk mounted at $RD_PATH"
@@ -42,3 +42,22 @@ mcrd_start() {
       echo "Could not mount Ramdisk. Does $RD_PATH exist?"
     fi
   fi
+}
+
+mcrd_stop() {
+  if mount -l -t tmpfs | grep $RD_PATH > /dev/null
+  then
+    echo "Ramdisk mounted at $RD_PATH.... unmounting"
+    as_user "umount $RD_PATH"
+    sleep 3
+  else
+    echo "Ramdisk was not mounted at $RD_PATH"
+  fi
+  
+  if mount -l -t tmpfs | grep $RD_PATH > /dev/null
+  then
+    echo "Could not unmount ramdisk at $RD_PATH"
+  else
+    echo "Ramdisk unmounted"
+  fi
+}

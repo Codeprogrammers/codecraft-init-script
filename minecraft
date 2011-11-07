@@ -1,6 +1,6 @@
 #!/bin/bash
 # /etc/init.d/minecraft
-# version 0.1.0 2011-01-27 (YYYY-MM-DD)
+# version 0.1.0 2011-11-07 (YYYY-MM-DD)
 
 ### BEGIN INIT INFO
 # Provides:   minecraft
@@ -17,6 +17,7 @@
 #Settings
 SERVICE='craftbukkit.jar'
 USERNAME='minecraft'
+SCREEN_NAME='codecraft'
 BUILD='b1337'
 MC_PATH="/mnt/codecraft/servers/$BUILD"
 RD_PATH="/mnt/codecraft/ramdisk/$BUILD"
@@ -24,6 +25,9 @@ WORLD_PATH='/mnt/codecraft/worlds'
 WORLD_BACKUPPATH='/mnt/codecraft/archives/worlds'
 SERVER_BACKUPPATH='/mnt/codecraft/archives/servers'
 INVOCATION="java -Xms512M -Xmx2048M -jar craftbukkit.jar"
+SAVE-OFF_MSG="SERVER BACKUP STARTING. Server going readonly..."
+SAVE-ON_MSG=""
+STOP_MSG=""
 
 ME=`whoami`
 as_user() {
@@ -32,3 +36,22 @@ as_user() {
   else
     su - $USERNAME -c "$1"
   fi
+}
+
+mc_start() {
+  if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
+  then
+    echo "Tried to start but $SERVICE was already running!"
+  else
+    echo "$SERVICE was not running... starting."
+    cd $MCPATH
+    as_user "cd $MC_PATH && screen -dmS $SCREEN_NAME $INVOCATION"
+    sleep 7
+    if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
+    then
+      echo "$SERVICE is now running."
+    else
+      echo "Could not start $SERVICE."
+    fi
+  fi
+}

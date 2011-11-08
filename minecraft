@@ -101,3 +101,38 @@ mc_stop() {
     echo "$SERVICE is shut down."
   fi
 }
+
+mc_world_backup() {
+  echo "Backing up Worlds"
+  
+  cd $WORLD_BACKUPPATH
+  rm -f directory_list
+  if [! ls | grep `date "+%Y.%m.%d"`]
+  then
+    as_user "mkdir `date "+%Y.%m.%d"`"
+    as_user "ls -1r --group-directories-first > directory_list"   # List newest directory first
+  else
+    as_user "ls -1r --group-directories-first > directory_list"   # List newest directory first
+  fi
+  
+  cd < directory_list | head -n1    # cd into most recently created directory
+  rm -f directory_list
+  if [! ls | grep `date "+%H:%M"`]
+  then
+    as_user "mkdir `date "+%H:%M"`"
+    as_user "ls -1r --group-directories-first > directory_list"   # List newest directory first
+  else
+    as_user "ls -1r --group-directories-first > directory_list"   # List newest directory first
+  fi
+  
+  tmp_WORLD_BACKUPPATH=`cat directory_list | head -n1`
+  as_user "cp -r $WORLD_PATH $tmp_WORLD_BACKUPPATH"
+  sleep 5
+  
+  if [du -c $WORLD_PATH | grep total] == [du -c $tmp_WORLD_BACKUPPATH | grep total]
+  then
+    echo "Backup Complete"
+  else
+    echo "Backup failed! The source and target contents do not match!"
+  fi
+}

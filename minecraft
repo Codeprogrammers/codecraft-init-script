@@ -14,6 +14,7 @@
 # Description:    Starts the minecraft server
 ### END INIT INFO
 
+
 #Settings
 SERVICE='craftbukkit.jar'
 USERNAME='minecraft'
@@ -136,3 +137,38 @@ mc_world_backup() {
     echo "Backup failed! The source and target contents do not match!"
   fi
 }
+
+
+#Start-Stop here
+case "$1" in
+  start)
+    mc_start
+    ;;
+  stop)
+    mc_stop
+    ;;
+  restart)
+    mc_stop
+    mc_start
+    ;;
+  worldbackup)
+    mc_saveoff
+    mc_world_backup
+    mc_saveon
+    ;;
+  status)
+    if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
+    then
+      echo "$SERVICE is running."
+    else
+      echo "$SERVICE is not running."
+    fi
+    ;;
+
+  *)
+  echo "Usage: /etc/init.d/minecraft {start|stop|worldbackup|status|restart}"
+  exit 1
+  ;;
+esac
+
+exit 0

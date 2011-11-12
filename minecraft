@@ -21,7 +21,7 @@ USERNAME='minecraft'
 SCREEN_NAME='codecraft'
 BUILD='b1337'
 MC_PATH="/mnt/codecraft/servers/$BUILD"
-RD_PATH="/mnt/codecraft/ramdisk/$BUILD"
+RD_PATH="/mnt/codecraft/ramdisk"
 WORLD_PATH='/mnt/codecraft/worlds'
 WORLD_BACKUPPATH='/mnt/codecraft/archives/worlds'
 SERVER_BACKUPPATH='/mnt/codecraft/archives/servers'
@@ -138,6 +138,86 @@ mc_world_backup() {
   fi
 }
 
+mc_rd_start() {
+  if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
+  then
+    echo "Tried to start but $SERVICE was already running!"
+  else
+    echo "$SERVICE was not running... starting."
+    cd $MC_PATH
+    # For now searching for folders in ramdisk
+    if [ ! -d $RD_PATH/* ]
+    then
+     echo "$RD_PATH empty, prepping..."
+# Commented because we only want the worlds in the ramdisk,
+# not the whole server.
+#     as_user "cp -R $MC_PATH/* $RD_PATH"
+     # Populating ramdisk with worlds
+     cd $WORLD_PATH
+     for dir in *
+     do
+     # Determining if the folder is a world (has level.dat) or something we don't need.
+     if [ -d "$dir" ] && [ -f "$dir/level.dat" ]
+     then
+      echo $dir
+      # Copy the world from $WORLD_PATH (cd earlier in if statement)
+      # to ramdisk ($RD_PATH)
+      as_user "cp -R $dir $RD_PATH/"
+      # Linking ramdisk to server directory
+      # -F - Force is directory
+      # -h - stops from searching directory?
+      # -s - symbolic link
+      # see "man ln" for more info
+      as_user "ln -Fhs $RD_PATH/$dir $MC_PATH/$dir"
+     fi
+     done
+    fi
+    # Start server as normal.
+    as_user "cd $MC_PATH && screen -dmS $SCREEN_NAME $INVOCATION"
+    sleep 7
+    if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
+    then
+      echo "$SERVICE is now running."
+    else
+      echo "Could not start $SERVICE."
+    fi
+  fi
+}
+
+mc_rd_save() {
+ if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
+ then
+  echo "Saving ramdisk to disk."
+  # Service is running, is it in $RD_PATH?
+  if [ ! -f $RD_PATH/$SERVICE ]
+  then
+   # Service not in $RD_PATH, warn user.
+   echo "Sorry, $SERVICE not in ramdisk!"
+  else
+   # Service found in $RD_PATH, start save.
+   echo "$SERVICE being copied to disk"
+   if [ -d $MC_PATH/world2 ]
+   then
+    # Previous save exists, delete
+    as_user "rm -r $MCPATH/world2"
+   fi
+   if [ -d $MC_PATH/world ]
+   then
+    # Move current version to world2
+    as_user "mv $MC_PATH/world/ $MC_PATH/world2/"
+   fi
+   
+   as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-off\"\015'"
+   as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-all\"\015'"
+   as_user "cp -R $RD_PATH/* $MC_PATH/"
+   as_user "screen -p 0 -S codecraft -X eval 'stuff \"save-on\"\015'"
+   
+  fi
+ else
+  # Service not running, nothing to save
+  echo "Nothing to save, $SERVICE is not running."
+ fi
+}
 
 #Start-Stop here
 case "$1" in
@@ -163,6 +243,10 @@ case "$1" in
     else
       echo "$SERVICE is not running."
     fi
+    ;;
+  start_rd)
+    # Start a RD instance
+    mc_rd_start
     ;;
 
   *)

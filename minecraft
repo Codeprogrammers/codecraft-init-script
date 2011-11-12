@@ -45,7 +45,7 @@ mc_start() {
     echo "Tried to start but $SERVICE was already running!"
   else
     echo "$SERVICE was not running... starting."
-    cd $MCPATH
+    cd $MC_PATH
     as_user "cd $MC_PATH && screen -dmS $SCREEN_NAME $INVOCATION"
     sleep 7
     if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null

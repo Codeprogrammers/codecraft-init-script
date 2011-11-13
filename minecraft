@@ -147,36 +147,30 @@ mc_rd_start() {
     echo "Tried to start but $SERVICE was already running!"
   else
     echo "$SERVICE was not running... starting."
-    cd $MC_PATH
-    # For now searching for folders in ramdisk
-    if [ ! -d $RD_PATH/* ]
-    then
-     echo "$RD_PATH empty, prepping..."
-# Commented because we only want the worlds in the ramdisk,
-# not the whole server.
-#     as_user "cp -R $MC_PATH/* $RD_PATH"
-     # Populating ramdisk with worlds
      cd $WORLD_PATH
      for dir in *
      do
-     # Determining if the folder is a world (has level.dat) or something we don't need.
-     if [ -d "$dir" ] && [ -f "$dir/level.dat" ]
-     then
-     # echo $dir
-      # Copy the world from $WORLD_PATH (cd earlier in if statement)
-      # to ramdisk ($RD_PATH)
-      as_user "cp -R $dir $RD_PATH/"
-      # Are there symlink or folders there already?
-      if [ -d $MC_PATH/$dir ]
+      # Searching for world in $RD_PATH
+      # If missing...
+      if [ ! -d $RD_PATH/$dir ]
       then
-       # Moving old sym links
-       as_user "mv $MC_PATH/$dir $MC_PATH/$dir.old"
+       # Determe if the folder is a world (has level.dat) or not.
+       # If it is a world folder...
+       if [ -d "$dir" ] && [ -f "$dir/level.dat" ]
+       then
+        # Copy the world from $WORLD_PATH to $RD_PATH
+        as_user "cp -R $dir $RD_PATH/"
+        # Are there folders or symlinks pre-existing?
+        if [ -d $MC_PATH/$dir ]
+        then
+         # Moving old sym links
+         as_user "mv $MC_PATH/$dir $MC_PATH/$dir.old"
+        fi
+        # Linking ramdisk to server directory
+        as_user "ln -s $RD_PATH/$dir $MC_PATH/$dir"
+       fi
       fi
-      # Linking ramdisk to server directory
-      as_user "ln -s $RD_PATH/$dir $MC_PATH/$dir"
-     fi
      done
-    fi
     # Start server as normal.
     as_user "cd $MC_PATH && screen -dmS $SCREEN_NAME $INVOCATION"
     sleep 7

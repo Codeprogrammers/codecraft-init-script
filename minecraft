@@ -141,8 +141,9 @@ mc_world_backup() {
 }
 
 mc_rd_start() {
+RUN_DIR=$(dirname $0)
 # exit status from mcramdisk script will determine outcome here.
- if ./mcramdisk mount
+ if $RUN_DIR/mcramdisk mount
  then
   if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
   then
@@ -161,8 +162,10 @@ mc_rd_start() {
       if [ ! -d $RD_PATH/$dir ]
       then
        # Determe if the folder is a world (has level.dat) or not.
+       # ALso have an expression to ignor any directories with numbers (sorry)
        # If it is a world folder...
-       if [ -d "$dir" ] && [ -f "$dir/level.dat" ]
+       javwc=`expr match "$dir" '.*[0-9]'`
+       if [ -d "$dir" ] && [ -f "$dir/level.dat" ] && [ $javwc -eq 0 ]
        then
         # Copy the world from $WORLD_PATH to $RD_PATH
         as_user "cp -R $dir $RD_PATH/"

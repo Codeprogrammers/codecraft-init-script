@@ -194,6 +194,11 @@ mc_rd_save() {
    # Service not in $RD_PATH, warn user.
    echo "Sorry, $SERVICE not in ramdisk!"
   else
+   
+   # Stop live saving by bukkit, initiate world save
+   as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-off\"\015'"
+   as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-all\"\015'"
+
    # Service found in $RD_PATH, start save.
    echo "$SERVICE being copied to disk"
    if [ -d $MC_PATH/world2 ]
@@ -207,9 +212,9 @@ mc_rd_save() {
     as_user "mv $MC_PATH/world/ $MC_PATH/world2/"
    fi
    
-   as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-off\"\015'"
-   as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-all\"\015'"
    as_user "cp -R $RD_PATH/* $MC_PATH/"
+
+   # Start live saving by bukkit
    as_user "screen -p 0 -S codecraft -X eval 'stuff \"save-on\"\015'"
    
   fi

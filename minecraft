@@ -29,6 +29,8 @@ INVOCATION="java -Xms512M -Xmx2048M -jar craftbukkit.jar"
 SAVE_OFF_MSG="SERVER BACKUP STARTING. Server going readonly..."
 SAVE_ON_MSG="SERVER BACKUP ENDED. Server going read-write..."
 STOP_MSG=""
+#Grabbing world name from $MC_PATH/server.properties
+WORLD_NAME=$(cat $MC_PATH/server.properties | fgrep 'level-name=' | sed -e s/.*level-name=//)
 
 ME=`whoami`
 as_user() {
@@ -147,6 +149,10 @@ mc_rd_start() {
     echo "Tried to start but $SERVICE was already running!"
   else
     echo "$SERVICE was not running... starting."
+    if [ ! -d $WORLD_PATH/$WORLD_NAME ]
+    then
+     echo "$WORLD_NAME is not in $WORLD_PATH!"
+    else
      cd $WORLD_PATH
      for dir in *
      do
@@ -180,6 +186,7 @@ mc_rd_start() {
     else
       echo "Could not start $SERVICE."
     fi
+   fi
   fi
  else
   echo "Cound not start $SERVICE, ramdisk could not be mounted"
@@ -189,36 +196,53 @@ mc_rd_start() {
 mc_rd_save() {
  if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
  then
-  echo "Saving ramdisk to disk."
-  # Service is running, is it in $RD_PATH?
-  if [ ! -f $RD_PATH/$SERVICE ]
+  if [ ! -d $RD_PATH/$WORLD_NAME ]
   then
-   # Service not in $RD_PATH, warn user.
-   echo "Sorry, $SERVICE not in ramdisk!"
+   echo "Nothing in $RD_PATH to backup!"
   else
-   
-   # Stop live saving by bukkit, initiate world save
-   as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-off\"\015'"
-   as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-all\"\015'"
+   echo "Saving ramdisk to disk."
 
-   # Service found in $RD_PATH, start save.
-   echo "$SERVICE being copied to disk"
-   if [ -d $MC_PATH/world2 ]
-   then
-    # Previous save exists, delete
-    as_user "rm -r $MCPATH/world2"
-   fi
-   if [ -d $MC_PATH/world ]
-   then
-    # Move current version to world2
-    as_user "mv $MC_PATH/world/ $MC_PATH/world2/"
-   fi
-   
-   as_user "cp -R $RD_PATH/* $MC_PATH/"
+    # Stop live saving by bukkit, initiate world save
+    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-off\"\015'"
+    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-all\"\015'"
+    sleep 3
+
+    cd $RD_PATH
+    filedate=$(date +"-%F-%H.%M")
+    # If there is a directory inside $RD_PATH, for loop will copy only those
+    # with a "level.dat" file inside them.
+    for dir in *
+    do
+    # Making sure we only copy world folders.
+     if [ -d "$dir" ] && [ -f "$dir/level.dat" ]
+     then
+
+    # Need a way to determine how old backups are dealt with.
+    # Currently this can easily overpopulate your world folder.
+    #   if [ -d $WORLD_PATH/$dir ] && [ -d $WORLD_PATH/$dir"2" ]
+    #   then
+    #    # Previous save exists, delete
+    #    echo "Making room for "$dir" backup, removing "$dir"2."
+    #    as_user "rm -r $WORLD_PATH/world2"
+    #   fi
+
+       # If $dir esists in $WORLD_PATH folder, then rename it with $dir and a $filedate
+       if [ -d $WORLD_PATH/$dir ]
+       then
+        # Move current $dir to $dir$filedate
+        echo "Moving "$WORLD_PATH\/$dir" to "$WORLD_PATH\/$dir$filedate
+        as_user "mv "$WORLD_PATH/$dir"/ "$WORLD_PATH\/$dir$filedate
+       fi
+       # Copying from $RD_PATH to $WORLD_PATH
+       echo "$dir being copied to disk"
+       as_user "cp -R $RD_PATH/$dir $WORLD_PATH/"
+     else
+      echo "Nothing copied from ramdisk."
+     fi
+    done
 
    # Start live saving by bukkit
    as_user "screen -p 0 -S codecraft -X eval 'stuff \"save-on\"\015'"
-   
   fi
  else
   # Service not running, nothing to save
@@ -254,6 +278,10 @@ case "$1" in
   start_rd)
     # Start a RD instance
     mc_rd_start
+    ;;
+  rd2disk)
+    # Start a RD instance
+    mc_rd_save
     ;;
 
   *)

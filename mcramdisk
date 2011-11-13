@@ -41,8 +41,10 @@ mcrd_mount() {
     if mount -l -t tmpfs | grep $RD_PATH > /dev/null
     then 
       echo "Ramdisk mounted at $RD_PATH"
+      exit 0
     else
       echo "Could not mount Ramdisk. Does $RD_PATH exist?"
+      exit 1
     fi
   fi
 }

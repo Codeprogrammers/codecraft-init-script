@@ -139,6 +139,9 @@ mc_world_backup() {
 }
 
 mc_rd_start() {
+# exit status from mcramdisk script will determine outcome here.
+ if ./mcramdisk mount > /dev/null
+ then
   if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
   then
     echo "Tried to start but $SERVICE was already running!"
@@ -182,6 +185,9 @@ mc_rd_start() {
       echo "Could not start $SERVICE."
     fi
   fi
+ else
+  echo "Cound not start $SERVICE, ramdisk could not be mounted"
+ fi
 }
 
 mc_rd_save() {

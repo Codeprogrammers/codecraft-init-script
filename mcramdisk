@@ -34,6 +34,7 @@ mcrd_mount() {
   if mount -l -t tmpfs | grep $RD_PATH > /dev/null
   then 
     echo "Ramdisk already mounted"
+    exit 0
   else
     echo "Mounting Ramdisk at $RD_PATH"
     as_user "mount -t tmpfs -o size=$RD_SIZE tmpfs $RD_PATH"

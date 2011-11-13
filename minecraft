@@ -162,16 +162,18 @@ mc_rd_start() {
      # Determining if the folder is a world (has level.dat) or something we don't need.
      if [ -d "$dir" ] && [ -f "$dir/level.dat" ]
      then
-      echo $dir
+     # echo $dir
       # Copy the world from $WORLD_PATH (cd earlier in if statement)
       # to ramdisk ($RD_PATH)
       as_user "cp -R $dir $RD_PATH/"
+      # Are there symlink or folders there already?
+      if [ -d $MC_PATH/$dir ]
+      then
+       # Moving old sym links
+       as_user "mv $MC_PATH/$dir $MC_PATH/$dir.old"
+      fi
       # Linking ramdisk to server directory
-      # -F - Force is directory
-      # -h - stops from searching directory?
-      # -s - symbolic link
-      # see "man ln" for more info
-      as_user "ln -Fhs $RD_PATH/$dir $MC_PATH/$dir"
+      as_user "ln -s $RD_PATH/$dir $MC_PATH/$dir"
      fi
      done
     fi

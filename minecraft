@@ -117,13 +117,12 @@ mc_world_backup() {
   rm -f directory_list
   if ls | grep `date "+%Y.%m.%d"` > /dev/null
   then
-    as_user "ls -1r --group-directories-first > directory_list"   # List newest directory first
+    bu_date=$(ls -1r --group-directories-first | head -n1)  # List only newest directory
   else
     as_user "mkdir `date "+%Y.%m.%d"`"
-    as_user "ls -1r --group-directories-first > directory_list"   # List newest directory first
+    bu_date=$(ls -1r --group-directories-first | head -n1)  # List only newest directory
   fi
   
-  bu_date=$(cat < directory_list | head -n1)
   cd $bu_date               # cd into most recently created directory
   if ls | grep `date "+%H-%M"` > /dev/null
   then

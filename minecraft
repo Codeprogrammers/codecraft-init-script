@@ -115,7 +115,7 @@ mc_world_backup() {
   
   cd $WORLD_BACKUPPATH
   rm -f directory_list
-  if ls | grep `date "+%Y.%m.%d"`
+  if ls | grep `date "+%Y.%m.%d"` > /dev/null
   then
     as_user "ls -1r --group-directories-first > directory_list"   # List newest directory first
   else
@@ -125,18 +125,23 @@ mc_world_backup() {
   
   bu_date=$(cat < directory_list | head -n1)
   cd $bu_date               # cd into most recently created directory
-  rm -f directory_list
-  if ls | grep `date "+%H:%M"`
+  if ls | grep `date "+%H-%M"` > /dev/null
   then
-    as_user "ls -1r --group-directories-first > directory_list"   # List newest directory first
+    bu_time=$(ls -1r --group-directories-first | head -n1)
+    bu_time_a="$bu_time"_a
+    as_user "mv $bu_time $bu_time_a"
+    
+    bu_time="$bu_time"_b
+    as_user "mkdir $bu_time"
+    as_user "cp -a $WORLD_PATH/* $bu_time"  
   else
     as_user "mkdir `date "+%H-%M"`"
-    as_user "ls -1r --group-directories-first > directory_list"   # List newest directory first
+    bu_time=$(ls -1r --group-directories-first | head -n1)
+    as_user "cp -a $WORLD_PATH/* $bu_time"  
   fi
-  
-  bu_time=$(cat < directory_list | head -n1)
-  as_user "cp -a $WORLD_PATH/* $bu_time"    #Copy and preserve all attributes (critical for successful checksum)
-  
+}
+
+mc_world_backup_cksum() {
 # Check to see if backup completed successfully 
   as_user "mkdir $WORLD_BACKUPPATH/tmp"
   cd $WORLD_BACKUPPATH/tmp
@@ -144,23 +149,26 @@ mc_world_backup() {
   
   cd $WORLD_PATH
   as_user "tar -cf worlds.tar *"
-  mv worlds.tar $WORLD_BACKUPPATH/tmp/worlds
+  as_user "mv worlds.tar $WORLD_BACKUPPATH/tmp/worlds"
   cd $WORLD_BACKUPPATH/$bu_date/$bu_time
   as_user "tar -cf worlds.tar *"
-  mv worlds.tar $WORLD_BACKUPPATH/tmp/worlds_backup
+  as_user "mv worlds.tar $WORLD_BACKUPPATH/tmp/worlds_backup"
   
   cd $WORLD_BACKUPPATH/tmp
-  WORLD_checksum=$(cksum worlds/worlds.tar)
-  BACKUP_checksum=$(cksum worlds_backup/worlds.tar)
-  
-  if [ "$WORLD_checksum" == "$BACKUP_checksum" ]
-  then
-    echo "Backup Complete"
-  else
-    echo "Backup failed! The source and target contents do not match!"
-  fi
+  WORLD_checksum=$(ls worlds | cksum)
+  BACKUP_checksum=$(ls worlds_backup | cksum)
   
   cd $WORLD_BACKUPPATH ; rm -rf tmp
+  
+  if [ "$WORLD_checksum" = "$BACKUP_checksum" ]
+  then
+    echo "Backup Complete"
+    exit 0
+  else
+    echo "Backup failed! The source and target contents do not match!"
+    echo $WORLD_checksum ; echo $BACKUP_checksum
+    exit 1
+  fi
 }
 
 mc_rd_start() {
@@ -297,6 +305,7 @@ case "$1" in
   worldbackup)
     mc_saveoff
     mc_world_backup
+    mc_world_backup_cksum
     mc_saveon
     ;;
   status)

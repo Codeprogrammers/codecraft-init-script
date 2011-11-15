@@ -26,9 +26,13 @@ WORLD_PATH='/mnt/codecraft/worlds'
 WORLD_BACKUPPATH='/mnt/codecraft/archives/worlds'
 SERVER_BACKUPPATH='/mnt/codecraft/archives/servers'
 INVOCATION="java -Xms512M -Xmx2048M -jar craftbukkit.jar"
+
+#Give minecraft users a status update in-game
 SAVE_OFF_MSG="SERVER BACKUP STARTING. Server going readonly..."
 SAVE_ON_MSG="SERVER BACKUP ENDED. Server going read-write..."
-STOP_MSG=""
+STOP_MSG="SERVER SHUTTING DOWN IN 15 SECONDS"
+RESTART_MSG="SERVER GOING FOR RESTART"
+
 #Grabbing world name from $MC_PATH/server.properties
 WORLD_NAME=$(cat $MC_PATH/server.properties | fgrep 'level-name=' | sed -e s/.*level-name=//)
 
@@ -89,6 +93,7 @@ mc_stop() {
   then
     echo "$SERVICE is running... stopping."
     as_user "screen -p 0 -S codecraft -X eval 'stuff \"say $STOP_MSG\"\015'"
+    sleep 5
     as_user "screen -p 0 -S codecraft -X eval 'stuff \"save-all\"\015'"
     sleep 10
     as_user "screen -p 0 -S codecraft -X eval 'stuff \"stop\"\015'"
@@ -262,8 +267,14 @@ case "$1" in
     mc_stop
     ;;
   restart)
-    mc_stop
-    mc_start
+    if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
+    then
+      as_user "screen -p 0 -S codecraft -X eval 'stuff \"say $RESTART_MSG\"\015'"
+      mc_stop
+      mc_start
+    else
+      mc_start
+    fi
     ;;
   worldbackup)
     mc_saveoff

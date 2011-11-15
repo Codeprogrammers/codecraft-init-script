@@ -17,7 +17,7 @@
 
 #Settings
 SERVICE='craftbukkit.jar'
-USERNAME='minecraft'
+USERNAME='daniel'
 SCREEN_NAME='codecraft'
 BUILD='b1337'
 MC_PATH="/mnt/codecraft/servers/$BUILD"
@@ -27,7 +27,7 @@ WORLD_BACKUPPATH='/mnt/codecraft/archives/worlds'
 SERVER_BACKUPPATH='/mnt/codecraft/archives/servers'
 INVOCATION="java -Xms512M -Xmx2048M -jar craftbukkit.jar"
 
-#Give minecraft users a status update in-game
+#Messages (sent to minecraft server console with "say" command)
 SAVE_OFF_MSG="SERVER BACKUP STARTING. Server going readonly..."
 SAVE_ON_MSG="SERVER BACKUP ENDED. Server going read-write..."
 STOP_MSG="SERVER SHUTTING DOWN IN 15 SECONDS"
@@ -115,34 +115,52 @@ mc_world_backup() {
   
   cd $WORLD_BACKUPPATH
   rm -f directory_list
-  if [! ls | grep `date "+%Y.%m.%d"`]
+  if ls | grep `date "+%Y.%m.%d"`
   then
+    as_user "ls -1r --group-directories-first > directory_list"   # List newest directory first
+  else
     as_user "mkdir `date "+%Y.%m.%d"`"
     as_user "ls -1r --group-directories-first > directory_list"   # List newest directory first
-  else
-    as_user "ls -1r --group-directories-first > directory_list"   # List newest directory first
   fi
   
-  cd < directory_list | head -n1    # cd into most recently created directory
+  bu_date=$(cat < directory_list | head -n1)
+  cd $bu_date               # cd into most recently created directory
   rm -f directory_list
-  if [! ls | grep `date "+%H:%M"`]
+  if ls | grep `date "+%H:%M"`
   then
-    as_user "mkdir `date "+%H:%M"`"
     as_user "ls -1r --group-directories-first > directory_list"   # List newest directory first
   else
+    as_user "mkdir `date "+%H-%M"`"
     as_user "ls -1r --group-directories-first > directory_list"   # List newest directory first
   fi
   
-  tmp_WORLD_BACKUPPATH=`cat directory_list | head -n1`
-  as_user "cp -r $WORLD_PATH $tmp_WORLD_BACKUPPATH"
-  sleep 5
+  bu_time=$(cat < directory_list | head -n1)
+  as_user "cp -a $WORLD_PATH/* $bu_time"    #Copy and preserve all attributes (critical for successful checksum)
   
-  if [du -c $WORLD_PATH | grep total] == [du -c $tmp_WORLD_BACKUPPATH | grep total]
+# Check to see if backup completed successfully 
+  as_user "mkdir $WORLD_BACKUPPATH/tmp"
+  cd $WORLD_BACKUPPATH/tmp
+  as_user "mkdir worlds ; mkdir worlds_backup"
+  
+  cd $WORLD_PATH
+  as_user "tar -cf worlds.tar *"
+  mv worlds.tar $WORLD_BACKUPPATH/tmp/worlds
+  cd $WORLD_BACKUPPATH/$bu_date/$bu_time
+  as_user "tar -cf worlds.tar *"
+  mv worlds.tar $WORLD_BACKUPPATH/tmp/worlds_backup
+  
+  cd $WORLD_BACKUPPATH/tmp
+  WORLD_checksum=$(cksum worlds/worlds.tar)
+  BACKUP_checksum=$(cksum worlds_backup/worlds.tar)
+  
+  if [ "$WORLD_checksum" == "$BACKUP_checksum" ]
   then
     echo "Backup Complete"
   else
     echo "Backup failed! The source and target contents do not match!"
   fi
+  
+  cd $WORLD_BACKUPPATH ; rm -rf tmp
 }
 
 mc_rd_start() {

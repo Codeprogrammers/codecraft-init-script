@@ -1,6 +1,6 @@
 #!/bin/bash
 # /etc/init.d/minecraft
-# version 0.3.5 2011-11-15 (YYYY-MM-DD)
+# version 0.3.6 2011-11-26 (YYYY-MM-DD)
 
 ### BEGIN INIT INFO
 # Provides:   minecraft
@@ -210,58 +210,43 @@ mc_world_backup_cksum() {
 
 mc_rd_start() {
 RUN_DIR=$(dirname $0)
-# exit status from mcramdisk script will determine outcome here.
+# exit status from mcramdisk script will determine wether
+#  the ramdisk is mounted, if it is
  if $RUN_DIR/mcramdisk mount
  then
-  if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
+  if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null   # Is service running?
   then
-    echo "Tried to start but $SERVICE was already running!"
+    echo "Tried to start but $SERVICE was already running!"                 # Instance exists, tell the user
   else
-    echo "$SERVICE was not running... starting."
-    if [ ! -d $WORLD_PATH/$WORLD_NAME ]
+    echo "$SERVICE was not running... prepping RAMDISK."                            # Instance does not exist, tell user we are going to start it
+    if [ ! -d $WORLD_PATH/$WORLD_NAME ]                                     # Checking for the  existance of a world using the name defined in server.properties
     then
-     echo "$WORLD_NAME is not in $WORLD_PATH!"
+     echo "$WORLD_NAME is not in $WORLD_PATH!"                              # If no world exists, tell the user
     else
-     cd $WORLD_PATH
-     for dir in *
+     cd $WORLD_PATH                                                         # If the world does exist, cd to $WORLD_PATH
+     for dir in *                                                           # For each folder in WORLD_PATH,
      do
-      # Searching for world in $RD_PATH
-      # If missing...
-      if [ ! -d $RD_PATH/$dir ]
+      if [ ! -d $RD_PATH/$dir ]                                             # We are going to make sure it does not reside on the RAMDISK
       then
-       # Determe if the folder is a world (has level.dat) or not.
-       # ALso have an expression to ignor any directories with numbers (sorry)
-       # If it is a world folder...
-       javwc=`expr match "$dir" '.*[0-9]'`
-       if [ -d "$dir" ] && [ -f "$dir/level.dat" ] && [ $javwc -eq 0 ]
+       javwc=`expr match "$dir" '.*[0-9]'`                                  # Expression to filter out the world backups (ignore something ending with a number)
+       if [ -d "$dir" ] && [ -f "$dir/level.dat" ] && [ $javwc -eq 0 ]      # Make sure it is a directory, and that it has a level.dat file in it, and the it IS NOT a backup
        then
-        # Copy the world from $WORLD_PATH to $RD_PATH
-        as_user "cp -R $dir $RD_PATH/"
-        # Are there folders or symlinks pre-existing?
-        if [ -d $MC_PATH/$dir ]
+        as_user "cp -R $dir $RD_PATH/"                                      # Copy the world from $WORLD_PATH to $RD_PATH
+        if [ -d $MC_PATH/$dir ]                                             # Are there folders or symlinks already in $MC_PATH?
         then
-         # Moving old sym links
-         as_user "mv $MC_PATH/$dir $MC_PATH/$dir.old"
+         as_user "mv $MC_PATH/$dir $MC_PATH/$dir.old"                       # Rename them with the suffix ".old"
         fi
         # Linking ramdisk to server directory
-        as_user "ln -s $RD_PATH/$dir $MC_PATH/$dir"
+        as_user "ln -s $RD_PATH/$dir $MC_PATH/$dir"                         # Setup the symlinks to the worlds on the RAMDISK
        fi
       fi
      done
-    # Start server as normal.
-    as_user "cd $MC_PATH && screen -dmS $SCREEN_NAME $INVOCATION"
-    sleep 7
-    if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
-    then
-      echo "$SERVICE is now running."
-    else
-      echo "Could not start $SERVICE."
-    fi
-   fi
-  fi
+     mc_start                                                               # Then start the server as normal.
+   fi                                                                       # Close if statement "world exist?"
+  fi                                                                        # Close if statement "running?"
  else
   echo "Cound not start $SERVICE, ramdisk could not be mounted"
- fi
+ fi                                                                         # Close if statement "RAMDISK mounted?"
 }
 
 mc_rd_save() {

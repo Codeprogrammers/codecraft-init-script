@@ -17,7 +17,7 @@
 
 #Settings
 SERVICE='craftbukkit.jar'
-USERNAME='daniel'
+USERNAME='minecraft'
 SCREEN_NAME='codecraft'
 BUILD='b1337'
 MC_PATH="/mnt/codecraft/servers/$BUILD"

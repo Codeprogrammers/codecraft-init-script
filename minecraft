@@ -25,7 +25,7 @@ RD_PATH="/mnt/codecraft/ramdisk"
 WORLD_PATH='/mnt/codecraft/worlds'
 WORLD_BACKUPPATH='/mnt/codecraft/archives/worlds'
 SERVER_BACKUPPATH='/mnt/codecraft/archives/servers'
-INVOCATION="java -Xms512M -Xmx2048M -jar craftbukkit.jar"
+INVOCATION="java -Xms512M -Xmx1024M -jar craftbukkit.jar"
 
 #Messages (sent to minecraft server console with "say" command)
 SAVE_OFF_MSG="SERVER BACKUP STARTING. Server going readonly..."
@@ -36,6 +36,7 @@ RESTART_MSG="SERVER GOING FOR RESTART"
 #Grabbing world name from $MC_PATH/server.properties
 WORLD_NAME=$(cat $MC_PATH/server.properties | fgrep 'level-name=' | sed -e s/.*level-name=//)
 
+#Run commands as the user defined in the $USERNAME variable
 ME=`whoami`
 as_user() {
   if [ $ME == $USERNAME ] ; then
@@ -45,15 +46,21 @@ as_user() {
   fi
 }
 
+#Starts the service
 mc_start() {
+
+  #Check to see if the service is running and, if so, say it's already running. Else start the service
   if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
   then
     echo "Tried to start but $SERVICE was already running!"
   else
     echo "$SERVICE was not running... starting."
-    cd $MC_PATH
+
+    #cd to the location of the Minecraft server and start a screen session under the name $SCREEN_NAME
     as_user "cd $MC_PATH && screen -dmS $SCREEN_NAME $INVOCATION"
-    sleep 7
+    sleep 7   #Wait 7 seconds before checking the status of the service
+
+    #Check to see if the service started successfully
     if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
     then
       echo "$SERVICE is now running."
@@ -63,40 +70,53 @@ mc_start() {
   fi
 }
 
+#Disables automatic saving and saves all current changes to the worlds
 mc_saveoff() {
   if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
   then
     echo "$SERVICE is running... suspending saves"
-    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $SAVE_OFF_MSG\"\015'"
-    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-off\"\015'"
-    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-all\"\015'"
+
+    #Send commands to the screen session
+    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $SAVE_OFF_MSG\"\015'"   # Tell the users that saving is turning off
+    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-off\"\015'"            # Turn saving off
+    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-all\"\015'"            # Save changes to the worlds
+
+    #Write changes to disk (This makes sure that changes made to the worlds are properly written to the disk)
     sync
-    sleep 10
+    sleep 10  #Wait 10 seconds before issuing any more commands
   else
     echo "$SERVICE was not running. Not suspending saves."
   fi
 }
 
+#Enables automatic saving
 mc_saveon() {
   if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
 	then
 		echo "$SERVICE is running... re-enabling saves"
-    as_user "screen -p 0 -S codecraft -X eval 'stuff \"save-on\"\015'"
-    as_user "screen -p 0 -S codecraft -X eval 'stuff \"say $SAVE_ON_MSG\"\015'"
+
+    #Send commands to the screen session
+    as_user "screen -p 0 -S codecraft -X eval 'stuff \"save-on\"\015'"            # Turn auto-saving on
+    as_user "screen -p 0 -S codecraft -X eval 'stuff \"say $SAVE_ON_MSG\"\015'"   # Tell the users that saving is now on
 	else
     echo "$SERVICE was not running. Not resuming saves."
 	fi
 }
 
+#Stops the service
 mc_stop() {
+
+  #Check to see if the service is running and, if it's running, stop it. Else say that the service was not running.
   if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
   then
     echo "$SERVICE is running... stopping."
-    as_user "screen -p 0 -S codecraft -X eval 'stuff \"say $STOP_MSG\"\015'"
-    sleep 5
-    as_user "screen -p 0 -S codecraft -X eval 'stuff \"save-all\"\015'"
-    sleep 10
-    as_user "screen -p 0 -S codecraft -X eval 'stuff \"stop\"\015'"
+
+    #Send commands to the screen session
+    as_user "screen -p 0 -S codecraft -X eval 'stuff \"say $STOP_MSG\"\015'"  # Tell the users that the server is stopping
+    sleep 5                                                                   # Wait 5 seconds
+    as_user "screen -p 0 -S codecraft -X eval 'stuff \"save-all\"\015'"       # Save changes to the worlds
+    sleep 10                                                                  # Wait 10 seconds
+    as_user "screen -p 0 -S codecraft -X eval 'stuff \"stop\"\015'"           # Stop the server
     sleep 7
   else
     echo "$SERVICE was not running."
@@ -110,62 +130,80 @@ mc_stop() {
   fi
 }
 
+#Backup the current world files
 mc_world_backup() {
-  echo "Backing up Worlds"
+  echo "Backing Up Worlds"
   
   cd $WORLD_BACKUPPATH
-  rm -f directory_list
+
+  # Check for directories with the current datestamp. If one exists, list it. If not, make it and then list it.
   if ls | grep `date "+%Y.%m.%d"` > /dev/null
   then
     bu_date=$(ls -1r --group-directories-first | head -n1)  # List only newest directory
   else
-    as_user "mkdir `date "+%Y.%m.%d"`"
+    as_user "mkdir `date "+%Y.%m.%d"`"                      # Make a directory with the name as the datestamp
     bu_date=$(ls -1r --group-directories-first | head -n1)  # List only newest directory
   fi
   
-  cd $bu_date               # cd into most recently created directory
+  cd $bu_date   # cd into most recently created directory
+
+  # Check for directories with the curent timestamp. 
+  # If one exists, append "_a" to it's name, then make the new directory with "_b" appended to it's name.
+  # Else, just make the directory with the timestamp for it's name. 
   if ls | grep `date "+%H-%M"` > /dev/null
   then
-    bu_time=$(ls -1r --group-directories-first | head -n1)
-    bu_time_a="$bu_time"_a
-    as_user "mv $bu_time $bu_time_a"
+    bu_time=$(ls -1r --group-directories-first | head -n1)  # Set $bu_time to the name of the newest directory
+    bu_time_a="$bu_time"_a                                  # Set $bu_time_a to the value of $bu_time and append "_a" to the value
+    as_user "mv $bu_time $bu_time_a"                        # Rename the newest directory to the value held in $bu_time_a
     
-    bu_time="$bu_time"_b
-    as_user "mkdir $bu_time"
-    as_user "cp -a $WORLD_PATH/* $bu_time"  
+    bu_time="$bu_time"_b                                    # Set $bu_time to the value of $bu_time and append "_b" to the value
+
+    #  We don't make a new variable $bu_time_b because we need the $bu_time variable
+    #+ to always point to the newest directory for the checksum later on.
+
+    as_user "mkdir $bu_time"                                # Make a directory with the name contained in $bu_time_b
+    as_user "cp -a $WORLD_PATH/* $bu_time"                  # Copy all data from the $WORLD_PATH directory to the $bu_time_b directory
+
   else
-    as_user "mkdir `date "+%H-%M"`"
-    bu_time=$(ls -1r --group-directories-first | head -n1)
-    as_user "cp -a $WORLD_PATH/* $bu_time"  
+    as_user "mkdir `date "+%H-%M"`"                         # Make a directory with the current timestamp as the name
+    bu_time=$(ls -1r --group-directories-first | head -n1)  # Set the $bu_time variable to the newest directory
+    as_user "cp -a $WORLD_PATH/* $bu_time"                  # Copy all data from the $WORLD_PATH directory to the $bu_time directory
   fi
 }
 
+#Check the integrity of the backup
 mc_world_backup_cksum() {
-# Check to see if backup completed successfully 
-  as_user "mkdir $WORLD_BACKUPPATH/tmp"
-  cd $WORLD_BACKUPPATH/tmp
-  as_user "mkdir worlds ; mkdir worlds_backup"
+  echo "Running a Checksum of the Backups"
+
+  as_user "mkdir $WORLD_BACKUPPATH/chksum"      # Make a directory named "chksum" under the $WORLD_BACKUPPATH directory
+  cd $WORLD_BACKUPPATH/chksum
+  as_user "mkdir worlds ; mkdir worlds_backup"  # Make the "worlds" and "worlds_backup" directories under the chksum directory
   
-  cd $WORLD_PATH
-  as_user "tar -cf worlds.tar *"
-  as_user "mv worlds.tar $WORLD_BACKUPPATH/tmp/worlds"
-  cd $WORLD_BACKUPPATH/$bu_date/$bu_time
-  as_user "tar -cf worlds.tar *"
-  as_user "mv worlds.tar $WORLD_BACKUPPATH/tmp/worlds_backup"
+  cd $WORLD_PATH                                                  # cd to where the worlds are stored
+  as_user "tar -cf worlds.tar *"                                  # Make a tarball so we can run a checksum on all the data
+  as_user "mv worlds.tar $WORLD_BACKUPPATH/chksum/worlds"         # Move the tarball to the temporary "chksum/worlds" directory
+  cd $WORLD_BACKUPPATH/$bu_date/$bu_time                          # cd to the latest backup
+  as_user "tar -cf worlds.tar *"                                  # Make a tarball so we can run a checksum on all the data
+  as_user "mv worlds.tar $WORLD_BACKUPPATH/chksum/worlds_backup"  # Move the tarball to the temporary "chksum/worlds_backup" directory
   
-  cd $WORLD_BACKUPPATH/tmp
-  WORLD_checksum=$(ls worlds | cksum)
-  BACKUP_checksum=$(ls worlds_backup | cksum)
+  cd $WORLD_BACKUPPATH/chksum
+  WORLD_checksum=$(ls worlds | cksum)           # Set $WORLD_checksum to the value of the checksum of the current worlds' tarball
+  BACKUP_checksum=$(ls worlds_backup | cksum)   # Set $BACKUP_checksum to the value of the checksum of the newest backup's tarball
   
-  cd $WORLD_BACKUPPATH ; rm -rf tmp
+  #  We pipe the output of the "ls" function to the chksum function here to make sure that the value output
+  #+ by chksum is the same for both tarballs. By default, chksum also outputs the file's location, but if it
+  #+ recieves input from stdout, the file's location is not displayed.
+
+  cd $WORLD_BACKUPPATH ; rm -rf chksum  # Delete the chksum directory
   
+  # Compare the values of the checksums. If they match, declare the backup as successful. If not, declare failure and display the checksums
   if [ "$WORLD_checksum" = "$BACKUP_checksum" ]
   then
     echo "Backup Complete"
     exit 0
   else
     echo "Backup failed! The source and target contents do not match!"
-    echo $WORLD_checksum ; echo $BACKUP_checksum
+    echo "Worlds: $WORLD_checksum" ; echo "Backup: $BACKUP_checksum"
     exit 1
   fi
 }

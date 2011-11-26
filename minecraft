@@ -148,21 +148,14 @@ mc_world_backup() {
   cd $bu_date   # cd into most recently created directory
 
   # Check for directories with the curent timestamp. 
-  # If one exists, append "_a" to it's name, then make the new directory with "_b" appended to it's name.
+  # If one exists make the new directory with the current seconds value appended to it's name.
   # Else, just make the directory with the timestamp for it's name. 
   if ls | grep `date "+%H-%M"` > /dev/null
   then
     bu_time=$(ls -1r --group-directories-first | head -n1)  # Set $bu_time to the name of the newest directory
-    bu_time_a="$bu_time"_a                                  # Set $bu_time_a to the value of $bu_time and append "_a" to the value
-    as_user "mv $bu_time $bu_time_a"                        # Rename the newest directory to the value held in $bu_time_a
-    
-    bu_time="$bu_time"_b                                    # Set $bu_time to the value of $bu_time and append "_b" to the value
-
-    #  We don't make a new variable $bu_time_b because we need the $bu_time variable
-    #+ to always point to the newest directory for the checksum later on.
-
-    as_user "mkdir $bu_time"                                # Make a directory with the name contained in $bu_time_b
-    as_user "cp -a $WORLD_PATH/* $bu_time"                  # Copy all data from the $WORLD_PATH directory to the $bu_time_b directory
+    bu_time="$bu_time"_`date "%S"`                          # Appened the current seconds time to $bu_time 
+    as_user "mkdir $bu_time"                                # Make a directory with the name contained in $bu_time
+    as_user "cp -a $WORLD_PATH/* $bu_time"                  # Copy all data from the $WORLD_PATH directory to the $bu_time directory
 
   else
     as_user "mkdir `date "+%H-%M"`"                         # Make a directory with the current timestamp as the name

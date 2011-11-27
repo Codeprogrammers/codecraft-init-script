@@ -33,7 +33,7 @@ SERVER_BACKUPPATH='/mnt/codecraft/archives/servers'
 SAVE_OFF_MSG="Server going readonly..."
 SAVE_ON_MSG="Server going read-write..."
 BACKUP_START_MSG="SERVER BACKUP STARTING"
-BACKUP_DONE_MSG="SERVER BACKUP FINISHED"
+BACKUP_DONE_MSG="SERVER BACKUP COMPLETE"
 BACKUP_FAIL_MSG="SERVER BACKUP FAILED"
 STOP_MSG="SERVER SHUTTING DOWN IN 15 SECONDS"
 RESTART_MSG="SERVER GOING FOR RESTART"
@@ -88,8 +88,8 @@ mc_saveon() {
   if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
 	then echo "$SERVICE is running... re-enabling saves"
 
-    as_user "screen -p 0 -S codecraft -X eval 'stuff \"save-on\"\015'"            # Turn auto-saving on
-    as_user "screen -p 0 -S codecraft -X eval 'stuff \"say $SAVE_ON_MSG\"\015'"   # Tell the users that saving is now on
+    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-on\"\015'"            # Turn auto-saving on
+    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $SAVE_ON_MSG\"\015'"   # Tell the users that saving is now on
 
 	else echo "$SERVICE was not running. Not resuming saves."
 	fi
@@ -100,9 +100,9 @@ mc_stop() {
   if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
   then echo "$SERVICE is running... stopping."
 
-    as_user "screen -p 0 -S codecraft -X eval 'stuff \"say $STOP_MSG\"\015'"; sleep 5   # Tell the users that the server is stopping, Wait 5 seconds
-    as_user "screen -p 0 -S codecraft -X eval 'stuff \"save-all\"\015'"; sleep 10       # Save changes to the worlds, Wait 10 seconds
-    as_user "screen -p 0 -S codecraft -X eval 'stuff \"stop\"\015'"; sleep 7            # Stop the server, Wait 7 seconds
+    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $STOP_MSG\"\015'"; sleep 5   # Tell the users that the server is stopping, Wait 5 seconds
+    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-all\"\015'"; sleep 10       # Save changes to the worlds, Wait 10 seconds
+    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"stop\"\015'"; sleep 7            # Stop the server, Wait 7 seconds
 
   else echo "$SERVICE was not running."
   fi
@@ -168,12 +168,12 @@ mc_world_backup_cksum() {
   if [ "$WORLD_checksum" = "$BACKUP_checksum" ]
   then 
     echo "Backup Complete"
-    as_user "screen -p 0 -S codecraft -X eval 'stuff \"say $BACKUP_DONE_MSG\"\015'" 
+    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $BACKUP_DONE_MSG\"\015'" 
     exit 0
   else 
     echo "Backup failed! The source and target contents do not match!"
     echo "Worlds: $WORLD_checksum"; echo "Backup: $BACKUP_checksum"
-    as_user "screen -p 0 -S codecraft -X eval 'stuff \"say $BACKUP_FAIL_MSG\"\015'" 
+    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $BACKUP_FAIL_MSG\"\015'" 
     exit 1
   fi
 }
@@ -268,7 +268,7 @@ mc_rd_save() {
     done
 
    # Start live saving by bukkit
-   as_user "screen -p 0 -S codecraft -X eval 'stuff \"save-on\"\015'"
+   as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-on\"\015'"
   fi
  else
   # Service not running, nothing to save
@@ -287,7 +287,7 @@ case "$1" in
   restart)
     if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
     then
-      as_user "screen -p 0 -S codecraft -X eval 'stuff \"say $RESTART_MSG\"\015'"
+      as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $RESTART_MSG\"\015'"
       mc_stop
       mc_start
     else
@@ -297,7 +297,7 @@ case "$1" in
   worldbackup)
     DATE=$(date "+%Y.%m.%d")
     TIME=$(date "+%H-%M")
-    as_user "screen -p 0 -S codecraft -X eval 'stuff \"say $BACKUP_START_MSG\"\015'"
+    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $BACKUP_START_MSG\"\015'"
     mc_saveoff
     mc_world_backup
     mc_world_backup_cksum

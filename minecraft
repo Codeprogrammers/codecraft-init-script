@@ -144,7 +144,7 @@ mc_world_backup() {
 mc_world_backup_cksum() {
   echo "Running a Checksum of the Backups"
 
-  as_user "mkdir $WORLD_BACKUPPATH/chksum ; cd $WORLD_BACKUPPATH/chksum"   # Make a directory named "chksum" under the $WORLD_BACKUPPATH directory
+  as_user "mkdir $WORLD_BACKUPPATH/chksum" ; cd $WORLD_BACKUPPATH/chksum   # Make a directory named "chksum" under the $WORLD_BACKUPPATH directory
   as_user "mkdir worlds ; mkdir worlds_backup"                             # Make the "worlds" and "worlds_backup" directories under the chksum directory
   
   cd $WORLD_PATH                                                           # cd to where the worlds are stored

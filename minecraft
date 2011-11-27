@@ -16,16 +16,18 @@
 
 
 #Settings
-SERVICE='craftbukkit.jar'
 USERNAME='minecraft'
 SCREEN_NAME='codecraft'
 BUILD='b1337'
+SERVICE='craftbukkit.jar'
+INVOCATION="java -Xms512M -Xmx1024M -jar craftbukkit.jar"
+
+#File Paths
 MC_PATH="/mnt/codecraft/servers/$BUILD"
 RD_PATH="/mnt/codecraft/ramdisk"
 WORLD_PATH='/mnt/codecraft/worlds'
 WORLD_BACKUPPATH='/mnt/codecraft/archives/worlds'
 SERVER_BACKUPPATH='/mnt/codecraft/archives/servers'
-INVOCATION="java -Xms512M -Xmx1024M -jar craftbukkit.jar"
 
 #Messages (sent to minecraft server console with "say" command)
 SAVE_OFF_MSG="SERVER BACKUP STARTING. Server going readonly..."
@@ -36,36 +38,31 @@ RESTART_MSG="SERVER GOING FOR RESTART"
 #Grabbing world name from $MC_PATH/server.properties
 WORLD_NAME=$(cat $MC_PATH/server.properties | fgrep 'level-name=' | sed -e s/.*level-name=//)
 
+
 #Run commands as the user defined in the $USERNAME variable
 ME=`whoami`
 as_user() {
-  if [ $ME == $USERNAME ] ; then
+  if [ $ME == $USERNAME ]
+  then 
     bash -c "$1"
-  else
+  else 
     su - $USERNAME -c "$1"
   fi
 }
 
 #Starts the service
 mc_start() {
-
-  #Check to see if the service is running and, if so, say it's already running. Else start the service
   if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
-  then
-    echo "Tried to start but $SERVICE was already running!"
-  else
-    echo "$SERVICE was not running... starting."
+  then echo "Tried to start but $SERVICE was already running!"
+  else echo "$SERVICE was not running... starting."
 
-    #cd to the location of the Minecraft server and start a screen session under the name $SCREEN_NAME
-    as_user "cd $MC_PATH && screen -dmS $SCREEN_NAME $INVOCATION"
-    sleep 7   #Wait 7 seconds before checking the status of the service
+    as_user "cd $MC_PATH && screen -dmS $SCREEN_NAME $INVOCATION"   # Start screen session 
+    sleep 7                                                         # Wait 7 seconds before checking service's status
 
     #Check to see if the service started successfully
     if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
-    then
-      echo "$SERVICE is now running."
-    else
-      echo "Could not start $SERVICE."
+    then echo "$SERVICE is now running."
+    else echo "Could not start $SERVICE."
     fi
   fi
 }
@@ -73,94 +70,74 @@ mc_start() {
 #Disables automatic saving and saves all current changes to the worlds
 mc_saveoff() {
   if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
-  then
-    echo "$SERVICE is running... suspending saves"
+  then echo "$SERVICE is running... suspending saves"
 
-    #Send commands to the screen session
     as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $SAVE_OFF_MSG\"\015'"   # Tell the users that saving is turning off
     as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-off\"\015'"            # Turn saving off
     as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-all\"\015'"            # Save changes to the worlds
+    sync; sleep 10                                                                    # Write changes to disk, Wait 10 seconds
 
-    #Write changes to disk (This makes sure that changes made to the worlds are properly written to the disk)
-    sync
-    sleep 10  #Wait 10 seconds before issuing any more commands
-  else
-    echo "$SERVICE was not running. Not suspending saves."
+  else echo "$SERVICE was not running. Not suspending saves."
   fi
 }
 
 #Enables automatic saving
 mc_saveon() {
   if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
-	then
-		echo "$SERVICE is running... re-enabling saves"
+	then echo "$SERVICE is running... re-enabling saves"
 
-    #Send commands to the screen session
     as_user "screen -p 0 -S codecraft -X eval 'stuff \"save-on\"\015'"            # Turn auto-saving on
     as_user "screen -p 0 -S codecraft -X eval 'stuff \"say $SAVE_ON_MSG\"\015'"   # Tell the users that saving is now on
-	else
-    echo "$SERVICE was not running. Not resuming saves."
+
+	else echo "$SERVICE was not running. Not resuming saves."
 	fi
 }
 
 #Stops the service
 mc_stop() {
-
-  #Check to see if the service is running and, if it's running, stop it. Else say that the service was not running.
   if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
-  then
-    echo "$SERVICE is running... stopping."
+  then echo "$SERVICE is running... stopping."
 
-    #Send commands to the screen session
-    as_user "screen -p 0 -S codecraft -X eval 'stuff \"say $STOP_MSG\"\015'"  # Tell the users that the server is stopping
-    sleep 5                                                                   # Wait 5 seconds
-    as_user "screen -p 0 -S codecraft -X eval 'stuff \"save-all\"\015'"       # Save changes to the worlds
-    sleep 10                                                                  # Wait 10 seconds
-    as_user "screen -p 0 -S codecraft -X eval 'stuff \"stop\"\015'"           # Stop the server
-    sleep 7
-  else
-    echo "$SERVICE was not running."
+    as_user "screen -p 0 -S codecraft -X eval 'stuff \"say $STOP_MSG\"\015'"; sleep 5   # Tell the users that the server is stopping, Wait 5 seconds
+    as_user "screen -p 0 -S codecraft -X eval 'stuff \"save-all\"\015'"; sleep 10       # Save changes to the worlds, Wait 10 seconds
+    as_user "screen -p 0 -S codecraft -X eval 'stuff \"stop\"\015'"; sleep 7            # Stop the server, Wait 7 seconds
+
+  else echo "$SERVICE was not running."
   fi
   
   if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
-  then
-    echo "$SERVICE could not be shut down... still running."
-  else
-    echo "$SERVICE is shut down."
+  then echo "$SERVICE could not be shut down... still running."
+  else echo "$SERVICE is shut down."
   fi
 }
 
 #Backup the current world files
 mc_world_backup() {
   echo "Backing Up Worlds"
-  
   cd $WORLD_BACKUPPATH
 
-  # Check for directories with the current datestamp. If one exists, list it. If not, make it and then list it.
+  # Check for directories with the current datestamp
   if ls | grep `date "+%Y.%m.%d"` > /dev/null
   then
-    bu_date=$(ls -1r --group-directories-first | head -n1)  # List only newest directory
+    bu_date=$(ls -1r --group-directories-first | head -n1)
   else
-    as_user "mkdir `date "+%Y.%m.%d"`"                      # Make a directory with the name as the datestamp
-    bu_date=$(ls -1r --group-directories-first | head -n1)  # List only newest directory
+    as_user "mkdir `date "+%Y.%m.%d"`"
+    bu_date=$(ls -1r --group-directories-first | head -n1)
   fi
   
   cd $bu_date   # cd into most recently created directory
 
   # Check for directories with the curent timestamp. 
-  # If one exists make the new directory with the current seconds value appended to it's name.
-  # Else, just make the directory with the timestamp for it's name. 
   if ls | grep `date "+%H-%M"` > /dev/null
   then
-    bu_time=$(ls -1r --group-directories-first | head -n1 | head -c5)  # Set $bu_time to the name of the newest directory
-    bu_time="$bu_time"_`date "+%S"`                                    # Appened the current seconds time to $bu_time 
-    as_user "mkdir $bu_time"                                           # Make a directory with the name contained in $bu_time
-    as_user "cp -a $WORLD_PATH/* $bu_time"                             # Copy all data from the $WORLD_PATH directory to the $bu_time directory
-
+    bu_time=$(ls -1r --group-directories-first | head -n1 | head -c5)   # Set $bu_time to the name of the newest directory
+    bu_time="$bu_time"_`date "+%S"`                                     # Appened the current seconds time to $bu_time 
+    as_user "mkdir $bu_time"                                            # Make a directory with the name contained in $bu_time
+    as_user "cp -a $WORLD_PATH/* $bu_time"                              # Copy all data from the $WORLD_PATH directory to the $bu_time directory
   else
-    as_user "mkdir `date "+%H-%M"`"                         # Make a directory with the current timestamp as the name
-    bu_time=$(ls -1r --group-directories-first | head -n1)  # Set the $bu_time variable to the newest directory
-    as_user "cp -a $WORLD_PATH/* $bu_time"                  # Copy all data from the $WORLD_PATH directory to the $bu_time directory
+    as_user "mkdir `date "+%H-%M"`"                                     # Make a directory with the current timestamp as the name
+    bu_time=$(ls -1r --group-directories-first | head -n1)              # Set the $bu_time variable to the newest directory
+    as_user "cp -a $WORLD_PATH/* $bu_time"                              # Copy all data from the $WORLD_PATH directory to the $bu_time directory
   fi
 }
 
@@ -168,35 +145,31 @@ mc_world_backup() {
 mc_world_backup_cksum() {
   echo "Running a Checksum of the Backups"
 
-  as_user "mkdir $WORLD_BACKUPPATH/chksum"      # Make a directory named "chksum" under the $WORLD_BACKUPPATH directory
-  cd $WORLD_BACKUPPATH/chksum
-  as_user "mkdir worlds ; mkdir worlds_backup"  # Make the "worlds" and "worlds_backup" directories under the chksum directory
+  as_user "mkdir $WORLD_BACKUPPATH/chksum ; cd $WORLD_BACKUPPATH/chksum"   # Make a directory named "chksum" under the $WORLD_BACKUPPATH directory
+  as_user "mkdir worlds ; mkdir worlds_backup"                             # Make the "worlds" and "worlds_backup" directories under the chksum directory
   
-  cd $WORLD_PATH                                                  # cd to where the worlds are stored
-  as_user "tar -cf worlds.tar *"                                  # Make a tarball so we can run a checksum on all the data
-  as_user "mv worlds.tar $WORLD_BACKUPPATH/chksum/worlds"         # Move the tarball to the temporary "chksum/worlds" directory
-  cd $WORLD_BACKUPPATH/$bu_date/$bu_time                          # cd to the latest backup
-  as_user "tar -cf worlds.tar *"                                  # Make a tarball so we can run a checksum on all the data
-  as_user "mv worlds.tar $WORLD_BACKUPPATH/chksum/worlds_backup"  # Move the tarball to the temporary "chksum/worlds_backup" directory
-  
-  cd $WORLD_BACKUPPATH/chksum
-  WORLD_checksum=$(ls worlds | cksum)           # Set $WORLD_checksum to the value of the checksum of the current worlds' tarball
-  BACKUP_checksum=$(ls worlds_backup | cksum)   # Set $BACKUP_checksum to the value of the checksum of the newest backup's tarball
-  
-  #  We pipe the output of the "ls" function to the chksum function here to make sure that the value output
-  #+ by chksum is the same for both tarballs. By default, chksum also outputs the file's location, but if it
-  #+ recieves input from stdout, the file's location is not displayed.
+  cd $WORLD_PATH                                                           # cd to where the worlds are stored
+  as_user "tar -cf worlds.tar *"                                           # Make a tarball so we can run a checksum on all the data
+  as_user "mv worlds.tar $WORLD_BACKUPPATH/chksum/worlds"                  # Move the tarball to the temporary "chksum/worlds" directory
 
-  cd $WORLD_BACKUPPATH ; rm -rf chksum  # Delete the chksum directory
+  cd $WORLD_BACKUPPATH/$bu_date/$bu_time                                   # cd to the latest backup
+  as_user "tar -cf worlds.tar *"                                           # Make a tarball so we can run a checksum on all the data
+  as_user "mv worlds.tar $WORLD_BACKUPPATH/chksum/worlds_backup"           # Move the tarball to the temporary "chksum/worlds_backup" directory
   
-  # Compare the values of the checksums. If they match, declare the backup as successful. If not, declare failure and display the checksums
+  cd $WORLD_BACKUPPATH/chksum
+  WORLD_checksum=$(ls worlds | cksum)                                      # Set $WORLD_checksum to the value of the checksum of the current worlds' tarball
+  BACKUP_checksum=$(ls worlds_backup | cksum)                              # Set $BACKUP_checksum to the value of the checksum of the newest backup's tarball
+
+  cd $WORLD_BACKUPPATH ; rm -rf chksum                                     # Delete the chksum directory
+  
+  # Compare the values of the checksums
   if [ "$WORLD_checksum" = "$BACKUP_checksum" ]
-  then
+  then 
     echo "Backup Complete"
     exit 0
-  else
+  else 
     echo "Backup failed! The source and target contents do not match!"
-    echo "Worlds: $WORLD_checksum" ; echo "Backup: $BACKUP_checksum"
+    echo "Worlds: $WORLD_checksum"; echo "Backup: $BACKUP_checksum"
     exit 1
   fi
 }
@@ -211,7 +184,7 @@ RUN_DIR=$(dirname $0)
   then
     echo "Tried to start but $SERVICE was already running!"                 # Instance exists, tell the user
   else
-    echo "$SERVICE was not running... prepping RAMDISK."                            # Instance does not exist, tell user we are going to start it
+    echo "$SERVICE was not running... prepping RAMDISK."                    # Instance does not exist, tell user we are going to start it
     if [ ! -d $WORLD_PATH/$WORLD_NAME ]                                     # Checking for the  existance of a world using the name defined in server.properties
     then
      echo "$WORLD_NAME is not in $WORLD_PATH!"                              # If no world exists, tell the user
@@ -325,10 +298,8 @@ case "$1" in
     ;;
   status)
     if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
-    then
-      echo "$SERVICE is running."
-    else
-      echo "$SERVICE is not running."
+    then echo "$SERVICE is running."
+    else echo "$SERVICE is not running."
     fi
     ;;
   start_rd)
@@ -336,7 +307,7 @@ case "$1" in
     mc_rd_start
     ;;
   rd2disk)
-    # Start a RD instance
+    # Backup RD contents
     mc_rd_save
     ;;
 

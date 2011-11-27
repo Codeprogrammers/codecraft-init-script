@@ -117,25 +117,25 @@ mc_world_backup() {
   cd $WORLD_BACKUPPATH
 
   # Check for directories with the current datestamp
-  if ls | grep `date "+%Y.%m.%d"` > /dev/null
+  if ls | grep $DATE > /dev/null
   then
     bu_date=$(ls -1r --group-directories-first | head -n1)
   else
-    as_user "mkdir `date "+%Y.%m.%d"`"
+    as_user "mkdir $DATE"
     bu_date=$(ls -1r --group-directories-first | head -n1)
   fi
   
   cd $bu_date   # cd into most recently created directory
 
   # Check for directories with the curent timestamp. 
-  if ls | grep `date "+%H-%M"` > /dev/null
+  if ls | grep $TIME > /dev/null
   then
     bu_time=$(ls -1r --group-directories-first | head -n1 | head -c5)   # Set $bu_time to the name of the newest directory
     bu_time="$bu_time"_`date "+%S"`                                     # Appened the current seconds time to $bu_time 
     as_user "mkdir $bu_time"                                            # Make a directory with the name contained in $bu_time
     as_user "cp -a $WORLD_PATH/* $bu_time"                              # Copy all data from the $WORLD_PATH directory to the $bu_time directory
   else
-    as_user "mkdir `date "+%H-%M"`"                                     # Make a directory with the current timestamp as the name
+    as_user "mkdir $TIME"                                               # Make a directory with the current timestamp as the name
     bu_time=$(ls -1r --group-directories-first | head -n1)              # Set the $bu_time variable to the newest directory
     as_user "cp -a $WORLD_PATH/* $bu_time"                              # Copy all data from the $WORLD_PATH directory to the $bu_time directory
   fi
@@ -291,6 +291,8 @@ case "$1" in
     fi
     ;;
   worldbackup)
+    DATE=`date "+%Y.%m.%d"`
+    TIME=`date "+%H-%M"`
     mc_saveoff
     mc_world_backup
     mc_world_backup_cksum

@@ -30,8 +30,11 @@ WORLD_BACKUPPATH='/mnt/codecraft/archives/worlds'
 SERVER_BACKUPPATH='/mnt/codecraft/archives/servers'
 
 #Messages (sent to minecraft server console with "say" command)
-SAVE_OFF_MSG="SERVER BACKUP STARTING. Server going readonly..."
-SAVE_ON_MSG="SERVER BACKUP ENDED. Server going read-write..."
+SAVE_OFF_MSG="Server going readonly..."
+SAVE_ON_MSG="Server going read-write..."
+BACKUP_START_MSG="SERVER BACKUP STARTING"
+BACKUP_DONE_MSG="SERVER BACKUP FINISHED"
+BACKUP_FAIL_MSG="SERVER BACKUP FAILED"
 STOP_MSG="SERVER SHUTTING DOWN IN 15 SECONDS"
 RESTART_MSG="SERVER GOING FOR RESTART"
 
@@ -74,7 +77,7 @@ mc_saveoff() {
     as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $SAVE_OFF_MSG\"\015'"   # Tell the users that saving is turning off
     as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-off\"\015'"            # Turn saving off
     as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-all\"\015'"            # Save changes to the worlds
-    sync; sleep 10                                                                    # Write changes to disk, Wait 10 seconds
+    sync; sleep 5                                                                     # Write changes to disk, Wait 5 seconds
 
   else echo "$SERVICE was not running. Not suspending saves."
   fi
@@ -165,10 +168,12 @@ mc_world_backup_cksum() {
   if [ "$WORLD_checksum" = "$BACKUP_checksum" ]
   then 
     echo "Backup Complete"
+    as_user "screen -p 0 -S codecraft -X eval 'stuff \"say $BACKUP_DONE_MSG\"\015'" 
     exit 0
   else 
     echo "Backup failed! The source and target contents do not match!"
     echo "Worlds: $WORLD_checksum"; echo "Backup: $BACKUP_checksum"
+    as_user "screen -p 0 -S codecraft -X eval 'stuff \"say $BACKUP_FAIL_MSG\"\015'" 
     exit 1
   fi
 }
@@ -292,6 +297,7 @@ case "$1" in
   worldbackup)
     DATE=$(date "+%Y.%m.%d")
     TIME=$(date "+%H-%M")
+    as_user "screen -p 0 -S codecraft -X eval 'stuff \"say $BACKUP_START_MSG\"\015'"
     mc_saveoff
     mc_world_backup
     mc_world_backup_cksum

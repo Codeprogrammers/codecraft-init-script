@@ -75,9 +75,9 @@ mc_saveoff() {
   then echo "$SERVICE is running... suspending saves"
 
     as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $SAVE_OFF_MSG\"\015'"   # Tell the users that saving is turning off
-    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-off\"\015'"            # Turn saving off
-    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-all\"\015'"            # Save changes to the worlds
-    sync; sleep 5                                                                     # Write changes to disk, Wait 5 seconds
+    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-off\"\015'"; sleep 2   # Turn saving off, Wait 2 seconds
+    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-all\"\015'"; sleep 2   # Save changes to the worlds, Wait 2 seconds
+    sync; sleep 2                                                                     # Write changes to disk, Wait 2 seconds
 
   else echo "$SERVICE was not running. Not suspending saves."
   fi
@@ -102,7 +102,7 @@ mc_stop() {
 
     as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $STOP_MSG\"\015'"; sleep 5   # Tell the users that the server is stopping, Wait 5 seconds
     as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-all\"\015'"; sleep 10       # Save changes to the worlds, Wait 10 seconds
-    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"stop\"\015'"; sleep 7            # Stop the server, Wait 7 seconds
+    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"stop\"\015'"; sleep 3            # Stop the server, Wait 3 seconds
 
   else echo "$SERVICE was not running."
   fi

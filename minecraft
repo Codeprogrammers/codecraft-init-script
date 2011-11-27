@@ -169,12 +169,10 @@ mc_world_backup_cksum() {
   then 
     echo "Backup Complete"
     as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $BACKUP_DONE_MSG\"\015'" 
-    exit 0
   else 
     echo "Backup failed! The source and target contents do not match!"
     echo "Worlds: $WORLD_checksum"; echo "Backup: $BACKUP_checksum"
     as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $BACKUP_FAIL_MSG\"\015'" 
-    exit 1
   fi
 }
 

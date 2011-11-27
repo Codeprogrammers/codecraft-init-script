@@ -38,7 +38,6 @@ RESTART_MSG="SERVER GOING FOR RESTART"
 #Grabbing world name from $MC_PATH/server.properties
 WORLD_NAME=$(cat $MC_PATH/server.properties | fgrep 'level-name=' | sed -e s/.*level-name=//)
 
-
 #Run commands as the user defined in the $USERNAME variable
 ME=`whoami`
 as_user() {
@@ -291,8 +290,8 @@ case "$1" in
     fi
     ;;
   worldbackup)
-    DATE=`date "+%Y.%m.%d"`
-    TIME=`date "+%H-%M"`
+    DATE=$(date "+%Y.%m.%d")
+    TIME=$(date "+%H-%M")
     mc_saveoff
     mc_world_backup
     mc_world_backup_cksum

@@ -100,9 +100,9 @@ mc_stop() {
   if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
   then echo "$SERVICE is running... stopping."
 
-    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $STOP_MSG\"\015'"; sleep 5   # Tell the users that the server is stopping, Wait 5 seconds
-    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-all\"\015'"; sleep 10       # Save changes to the worlds, Wait 10 seconds
-    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"stop\"\015'"; sleep 3            # Stop the server, Wait 3 seconds
+    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $STOP_MSG\"\015'" ; sleep 5   # Tell the users that the server is stopping, Wait 5 seconds
+    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-all\"\015'" ; sleep 10       # Save changes to the worlds, Wait 10 seconds
+    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"stop\"\015'" ; sleep 3            # Stop the server, Wait 3 seconds
 
   else echo "$SERVICE was not running."
   fi
@@ -146,10 +146,32 @@ mc_world_backup() {
 #Check the integrity of the backup
 mc_world_backup_cksum() {
   echo "Running a Checksum of the Backups"
+  cd $WORLD_BACKUPPATH
 
-  as_user "mkdir $WORLD_BACKUPPATH/chksum" ; cd $WORLD_BACKUPPATH/chksum   # Make a directory named "chksum" under the $WORLD_BACKUPPATH directory
-  as_user "mkdir worlds ; mkdir worlds_backup"                             # Make the "worlds" and "worlds_backup" directories under the chksum directory
-  
+  if [ -d "chksum" ]
+  then cd chksum
+
+    if [ -d "worlds" ]
+    then
+      rm -rf worlds
+      as_user "mkdir worlds"
+    else
+      as_user "mkdir worlds"
+    fi
+
+    if [ -d "worlds_backup" ]
+    then
+      rm -rf worlds_backup
+      as_user "mkdir worlds_backup"
+    else
+      as_user "mkdir worlds_backup"
+    fi
+
+  else
+    as_user "mkdir chksum" ; cd chksum
+    as_user "mkdir worlds ; mkdir worlds_backup"
+  fi
+
   cd $WORLD_PATH                                                           # cd to where the worlds are stored
   as_user "tar -cf worlds.tar *"                                           # Make a tarball so we can run a checksum on all the data
   as_user "mv worlds.tar $WORLD_BACKUPPATH/chksum/worlds"                  # Move the tarball to the temporary "chksum/worlds" directory
@@ -162,7 +184,6 @@ mc_world_backup_cksum() {
   WORLD_checksum=$(ls worlds | cksum)                                      # Set $WORLD_checksum to the value of the checksum of the current worlds' tarball
   BACKUP_checksum=$(ls worlds_backup | cksum)                              # Set $BACKUP_checksum to the value of the checksum of the newest backup's tarball
 
-  cd $WORLD_BACKUPPATH ; rm -rf chksum                                     # Delete the chksum directory
   
   # Compare the values of the checksums
   if [ "$WORLD_checksum" = "$BACKUP_checksum" ]
@@ -171,7 +192,7 @@ mc_world_backup_cksum() {
     as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $BACKUP_DONE_MSG\"\015'" 
   else 
     echo "Backup failed! The source and target contents do not match!"
-    echo "Worlds: $WORLD_checksum"; echo "Backup: $BACKUP_checksum"
+    echo "Worlds: $WORLD_checksum" ; echo "Backup: $BACKUP_checksum"
     as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $BACKUP_FAIL_MSG\"\015'" 
   fi
 }

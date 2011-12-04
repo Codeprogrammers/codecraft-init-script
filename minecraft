@@ -146,14 +146,14 @@ mc_world_backup() {
 #Check the integrity of the backup
 mc_world_backup_cksum() {
   echo "Running a Checksum of the Backups"
-  cd $WORLD_BACKUPPATH
+  cd $WORLD_BACKUPPATH/..
 
   if [ -d "chksum" ]
   then cd chksum
 
     if [ -d "worlds" ]
     then
-      rm -rf worlds
+      rm -rf "worlds"
       as_user "mkdir worlds"
     else
       as_user "mkdir worlds"
@@ -161,7 +161,7 @@ mc_world_backup_cksum() {
 
     if [ -d "worlds_backup" ]
     then
-      rm -rf worlds_backup
+      rm -rf "worlds_backup"
       as_user "mkdir worlds_backup"
     else
       as_user "mkdir worlds_backup"
@@ -172,15 +172,15 @@ mc_world_backup_cksum() {
     as_user "mkdir worlds ; mkdir worlds_backup"
   fi
 
-  cd $WORLD_PATH                                                           # cd to where the worlds are stored
-  as_user "tar -cf worlds.tar *"                                           # Make a tarball so we can run a checksum on all the data
-  as_user "mv worlds.tar $WORLD_BACKUPPATH/chksum/worlds"                  # Move the tarball to the temporary "chksum/worlds" directory
+  cd $WORLD_PATH                                                           
+  as_user "tar -cf worlds.tar *"                                           
+  as_user "mv worlds.tar $WORLD_BACKUPPATH/../chksum/worlds"                  
 
-  cd $WORLD_BACKUPPATH/$bu_date/$bu_time                                   # cd to the latest backup
-  as_user "tar -cf worlds.tar *"                                           # Make a tarball so we can run a checksum on all the data
-  as_user "mv worlds.tar $WORLD_BACKUPPATH/chksum/worlds_backup"           # Move the tarball to the temporary "chksum/worlds_backup" directory
+  cd $WORLD_BACKUPPATH/$bu_date/$bu_time                                   
+  as_user "tar -cf worlds.tar *"                                           
+  as_user "mv worlds.tar $WORLD_BACKUPPATH/../chksum/worlds_backup"           
   
-  cd $WORLD_BACKUPPATH/chksum
+  cd $WORLD_BACKUPPATH/../chksum
   WORLD_checksum=$(ls worlds | cksum)                                      # Set $WORLD_checksum to the value of the checksum of the current worlds' tarball
   BACKUP_checksum=$(ls worlds_backup | cksum)                              # Set $BACKUP_checksum to the value of the checksum of the newest backup's tarball
 

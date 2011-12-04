@@ -1,6 +1,6 @@
 #!/bin/bash
 # /etc/init.d/minecraft
-# version 0.3.6 2011-11-26 (YYYY-MM-DD)
+# version 0.3.11 2011-12-03 (YYYY-MM-DD)
 
 ### BEGIN INIT INFO
 # Provides:   minecraft
@@ -338,7 +338,7 @@ case "$1" in
     ;;
 
   *)
-  echo "Usage: /etc/init.d/minecraft {start|stop|worldbackup|status|restart}"
+  echo "Usage: /etc/init.d/minecraft {start|stop|restart|status|start_rd|rd2disk|worldbackup}"
   exit 1
   ;;
 esac

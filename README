@@ -6,7 +6,12 @@
 # don't copy them word-for-word and claim them as your own. That's just
 # rude. :'(
 #
-###
+# DISCLAIMER: 
+# We are not responsible for any damage or lost data either of these scripts
+# may cause to your server. These scripts are still in development and should
+# be considered beta quality.
+#
+### 
 
 ######
 Notes:
@@ -14,9 +19,24 @@ Notes:
 
 mcramdisk:
 ----------
-This script won't work unless the $USERNAME variable is set to root.
-You can allow it to be run by other users if you give said users
-permission to use the 'mount' command (but this poses security risks).
+
+This script creates and mounts a Ramdisk at a mount point specified in
+the the $RD_PATH variable at the beginning of the script.
+
+The $USERNAME variable should be set to the user which your minecraft
+server will run under. It is highly suggested to make a separate user,
+probably called "minecraft" or "bukkit", or possibly something else,
+which will only have write access to the folders necessary for running
+the service. This is simply common practice for keeping your server
+secure. In the event that the user running the service is compromised,
+the hacker will only gain access to a restricted set of directories.
+
+The $RD_SIZE variable is simply the size of the Ramdisk. If you've got
+tons of RAM, you may want to consider making a bigger ramdisk. However,
+most minecraft worlds will not take up a significant amount of space. A
+world larger than 100MB is considered significantly large. 256MB ought
+to be plenty for the majority of servers.
+
 
 Also, be careful with the 'mcramdisk reset' command while your minecraft
 server is running. Under normal circumstances, you should NEVER need to 
@@ -32,17 +52,80 @@ script the permission to use 'mount'. If not, they'd obviously still need
 to gain root access). Not to mention that a ramdisk will guarantee a loss
 of data in the event of a power outages or system crash.
 
-Therefor, children, always be sure to make backups at least bi-hourly when
-storing sensitive data on a ramdisk.
+Therefor, it would be wise to make backups at least bi-hourly when storing 
+sensitive data on a ramdisk.
 
 Luckily, the 'minecraft' init script is (or will be soon) set up to make
 backups of sensitive data every 15 minutes. Though it will (or soon will
 be) configurable in that respect.
 
-This has been a friendly lesson in cyber security by Toasty27.
-
 
 minecraft:
 ----------
 
-Currently being worked on
+This scrript starts up the Minecraft server (or bukkit, or whatever you use).
+It is HIGHLY ENCOURAGED that you test this script out yourself in a testing
+environment before using it with your production server. We are not responsible
+for any damage or lost data this script may cause to your server.
+
+### Available commands:
+
+start 			Starts the service
+stop 			Stops the service
+restart 		Restarts the service (stop followed by start, or just start if service is not running)
+status 			Displays the status of the service (Whether or not it's running)
+start_rd 		Starts the service in a ramdisk if the ramdisk has been mounted
+rd2disk 		Saves current state of your server to disk if it's running in a ramdisk
+worldbackup 	Backs up your worlds to the directory stated in WORLD_BACKUPPATH
+
+
+There are many variables in this script which you may modify to suite your
+operating environment.
+
+### Settings:
+
+USERNAME             This variable should be set to the user which the Minecraft server will run under.
+
+SCREEN_NAME			 The script starts the service in a screen session for easy remote accessibility. 
+					 This variable sets the name of the session.
+
+BUILD				 This should be set to the build number or version of the server you're running (like b1337 for bukkit, or v1.8.1 for vanilla)
+					 This is only used when looking for the directory your server runs under (for example, our server has directories named "b1240"
+					 and "b1337", and since we run off of b1337 as it's the most recent, we set this variable to b1337)
+
+SERVICE 			 This should be set to the name of the .jar file which starts your server (craftbukkit.jar for bukkit, minecraft.jar for vanilla)
+					 This must be set to the name of the .jar file used in the invocation since the service will show up in top or gnome-system-monitor
+					 with the name of the .jar file used in the invocation.
+
+INVOCATION			 This should be set to the command-line statements used to start your server. For example: "java -Xms512M -Xmx1024M -jar craftbukkit.jar"
+
+
+### File Paths:
+
+MC_PATH				 This should be set to the directory location where your server's files are stored. For example: "/mnt/codecraft/servers/$BUILD"
+					 Where $BUILD is the name of the folder of the current version of Bukkit or vanilla you're running, as stated previously in the 
+					 $BUILD variable above.
+
+RD_PATH   			 This should be set to the location where your Ramdisk is mounted.
+
+WORLD_PATH 			 This should be set to the location where your worlds are stored (we store our worlds in a separate location to keep things cleaner).
+					 This script expects you to keep your world folders in a separate directory which contains ONLY the world folders and NOTHING else. So
+					 don't store your world folders in the default directory (which would be the $MC_PATH in most cases).
+
+WORLD_BACKUPPATH	 This is the location where backups of your worlds will be stored. We use "/mnt/codecraft/archives/worlds"
+SERVER_BACKUPPATH    This is the location where backups of your server configurations will be stored. We use "/mnt/codecraft/archives/servers"
+
+
+### Messages:
+
+These variables represent messages which are sent to the bukkit/vanilla console with the "say" command. They should be fairly self explanitory. For example,
+when you use the "worldbackup" command, SAVE_OFF_MSG will be displayed to users in-game, followed by BACKUP_START_MSG and, if the backup is successful, followed
+by BACKUP_DONE_MSG. It should end with SAVE_ON_MSG.
+
+SAVE_OFF_MSG
+SAVE_ON_MSG
+BACKUP_START_MSG
+BACKUP_DONE_MSG
+BACKUP_FAIL_MSG
+STOP_MSG
+RESTART_MSG

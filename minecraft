@@ -260,14 +260,12 @@ mc_rd_save() {
         if [ -d "$dir" ] && [ -f "$dir/level.dat" ]
         then
 
-      # Need a way to determine how old backups are dealt with.
       # Currently this can easily overpopulate your world folder.
       #   if [ -d $WORLD_PATH/$dir ] && [ -d $WORLD_PATH/$dir"2" ]
       #   then
       #    # Previous save exists, delete
       #    echo "Making room for "$dir" backup, removing "$dir"2."
       #    as_user "rm -r $WORLD_PATH/world2"
-      #   fi
 
           # If $dir esists in $WORLD_PATH folder, then rename it with $dir and a $filedate
           if [ -d $WORLD_PATH/$dir ]

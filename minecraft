@@ -1,6 +1,6 @@
 #!/bin/bash
 # /etc/init.d/minecraft
-# version 0.3.11 2011-12-03 (YYYY-MM-DD)
+# version 0.3.12 2011-12-06 (YYYY-MM-DD)
 
 ### BEGIN INIT INFO
 # Provides:   minecraft
@@ -238,58 +238,34 @@ RUN_DIR=$(dirname $0)
 }
 
 mc_rd_save() {
-  if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
+  if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null    # Check if the serviec is running
   then
-  
-    if [ ! -d $RD_PATH/$WORLD_NAME ]
-    then echo "Nothing in $RD_PATH to backup!"
-    else echo "Saving ramdisk to disk."
-
-      as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-off\"\015'"
-      as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-all\"\015'"
+    if [ ! -d $RD_PATH/$WORLD_NAME ]                                         # Check if $WORLD_NAME (whatevere it was named in server.properties) exists in $RD_PATH
+    then echo "Nothing in $RD_PATH to backup!"                               # Not found! Warn user!
+    else
+      echo "Saving ramdisk to disk."                                         # Else we have found something and will continue with the regime, warn user we are beginning
+      as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-off\"\015'" # Send save-off command to the instance
+      as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-all\"\015'" # Force save of world.
       sleep 3
-
-      cd $RD_PATH
-      filedate=$(date +"-%F-%H.%M")
-      
-      # If there is a directory inside $RD_PATH, for loop will copy only those
-      # with a "level.dat" file inside them.
-      for dir in *
+      cd $RD_PATH                                                            # Make sure we are in the $RD_PATH for the next series of commands
+      filedate=$(date +"-%F-%H.%M")                                          # Set up our datestamp here.
+      for dir in *                                                           # For each directory inside $RD_PATH, we are going to perform the following series of commands
       do
-        # Making sure we only copy world folders.
-        if [ -d "$dir" ] && [ -f "$dir/level.dat" ]
+        if [ -d "$dir" ] && [ -f "$dir/level.dat" ]                          # Make sure it is a directory and verify itis a world by looking for "level.dat" inside of it.
         then
-
-      # Currently this can easily overpopulate your world folder.
-      #   if [ -d $WORLD_PATH/$dir ] && [ -d $WORLD_PATH/$dir"2" ]
-      #   then
-      #    # Previous save exists, delete
-      #    echo "Making room for "$dir" backup, removing "$dir"2."
-      #    as_user "rm -r $WORLD_PATH/world2"
-
-          # If $dir esists in $WORLD_PATH folder, then rename it with $dir and a $filedate
-          if [ -d $WORLD_PATH/$dir ]
-          then
-            # Move current $dir to $dir$filedate
-            echo "Moving "$WORLD_PATH\/$dir" to "$WORLD_PATH\/$dir$filedate
-            as_user "mv "$WORLD_PATH/$dir"/ "$WORLD_PATH\/$dir$filedate
+          if [ -d $WORLD_PATH/$dir ]                                         # Now we check to see if the world folder we found already exists in the $WORLD_PATH
+          then 
+            echo "Moving "$WORLD_PATH\/$dir" to "$WORLD_PATH\/$dir$filedate  # We tell the user what we are going to do
+            as_user "mv "$WORLD_PATH/$dir"/ "$WORLD_PATH\/$dir$filedate      # Then rename the found folder with a datestamp on the end of it's name
           fi
-
-         # Copying from $RD_PATH to $WORLD_PATH
-          echo "$dir being copied to disk"
-          as_user "cp -R $RD_PATH/$dir $WORLD_PATH/"
-
-        else echo "Nothing copied from ramdisk."
+          echo "$dir being copied to disk"                                   # Tell the user we are copying the RAMDISK
+          as_user "cp -R $RD_PATH/$dir $WORLD_PATH/"                         # Copy the world from $RD_PATH to $WORLD_PATH
+        else echo "Nothing copied from ramdisk."                             # If no world folders are found, we tell the user.
         fi
-
-      done
-      # Start live saving by bukkit
-      as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-on\"\015'"
+      done                                                                   # END for loop (directory inside $RD_PATH)
+      as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-on\"\015'"  # Send "save-on" to the instance
     fi
-
-  else
-  # Service not running, nothing to save
-  echo "Nothing to save, $SERVICE is not running."
+  else echo "Nothing to save, $SERVICE is not running."                      # Service not running, nothing to save
   fi
 }
 

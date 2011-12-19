@@ -21,6 +21,7 @@ SCREEN_NAME='codecraft'
 BUILD='b1337'
 SERVICE='craftbukkit.jar'
 INVOCATION="java -Xms512M -Xmx1024M -jar craftbukkit.jar"
+RAMDISK='true'
 
 #File Paths
 MC_PATH="/mnt/codecraft/servers/$BUILD"
@@ -54,19 +55,21 @@ as_user() {
 
 #Starts the service
 mc_start() {
-  if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
-  then echo "Tried to start but $SERVICE was already running!"
-  else echo "$SERVICE was not running... starting."
-
-    as_user "cd $MC_PATH && screen -dmS $SCREEN_NAME $INVOCATION"   # Start screen session 
-    sleep 7                                                         # Wait 7 seconds before checking service's status
-
-    #Check to see if the service started successfully
+  if [ $RAMDISK == 'true' ]
+  then
     if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
-    then echo "$SERVICE is now running."
-    else echo "Could not start $SERVICE."
+    then echo "Tried to start but $SERVICE was already running!"
+    else echo "$SERVICE was not running... starting."
+
+      as_user "cd $MC_PATH && screen -dmS $SCREEN_NAME $INVOCATION"   # Start screen session 
+      sleep 7                                                         # Wait 7 seconds before checking service's status
+
+      #Check to see if the service started successfully
+      if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
+      then echo "$SERVICE is now running."
+      else echo "Could not start $SERVICE."
+      fi
     fi
-  fi
 }
 
 #Disables automatic saving and saves all current changes to the worlds
@@ -184,7 +187,7 @@ mc_world_backup_cksum() {
   WORLD_checksum=$(ls worlds | cksum)                                      # Set $WORLD_checksum to the value of the checksum of the current worlds' tarball
   BACKUP_checksum=$(ls worlds_backup | cksum)                              # Set $BACKUP_checksum to the value of the checksum of the newest backup's tarball
 
-  
+
   # Compare the values of the checksums
   if [ "$WORLD_checksum" = "$BACKUP_checksum" ]
   then 
@@ -194,6 +197,45 @@ mc_world_backup_cksum() {
     echo "Backup failed! The source and target contents do not match!"
     echo "Worlds: $WORLD_checksum" ; echo "Backup: $BACKUP_checksum"
     as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $BACKUP_FAIL_MSG\"\015'" 
+  fi
+}
+
+# Mount the Ramdisk at $RD_PATH
+mcrd_mount() {
+  if mount -l -t tmpfs | grep $RD_PATH > /dev/null
+  then 
+    echo "Ramdisk already mounted"
+    exit 0
+  else
+    echo "Mounting Ramdisk at $RD_PATH"
+    as_user "mount -t tmpfs -o size=$RD_SIZE tmpfs $RD_PATH"
+    sleep 3
+    if mount -l -t tmpfs | grep $RD_PATH > /dev/null
+    then 
+      echo "Ramdisk mounted at $RD_PATH"
+      exit 0
+    else
+      echo "Could not mount Ramdisk. Does $RD_PATH exist?"
+      exit 1
+    fi
+  fi
+}
+
+mcrd_unmount() {
+  if mount -l -t tmpfs | grep $RD_PATH > /dev/null
+  then
+    echo "Ramdisk mounted at $RD_PATH.... unmounting"
+    as_user "umount $RD_PATH"
+    sleep 3
+  else
+    echo "Ramdisk was not mounted at $RD_PATH"
+  fi
+  
+  if mount -l -t tmpfs | grep $RD_PATH > /dev/null
+  then
+    echo "Could not unmount ramdisk at $RD_PATH"
+  else
+    echo "Ramdisk unmounted"
   fi
 }
 

@@ -17,27 +17,31 @@
 
 #Settings
 USERNAME='daniel'
+GROUPNAME='daniel'
 SCREEN_NAME='codecraft'
 BUILD='b1597'
 SERVICE='craftbukkit.jar'
 INVOCATION="java -Xms512M -Xmx1024M -jar craftbukkit.jar"
-RAMDISK='false'
+RAMDISK='true'
 
 #File Paths
-MC_PATH="/mnt/codecraft/servers/$BUILD"
-RD_PATH="/mnt/codecraft/ramdisk"
-WORLD_PATH='/mnt/codecraft/worlds'
-WORLD_BACKUPPATH='/mnt/codecraft/archives/worlds'
-SERVER_BACKUPPATH='/mnt/codecraft/archives/servers'
+ROOT_PATH="/mnt/codecraft"
+WORLD_PATH="$ROOT_PATH/worlds"
+MC_PATH="$ROOT_PATH/servers/$BUILD"
+RD_PATH="$ROOT_PATH/ramdisk"
+ROOT_BACKUPPATH="$ROOT_PATH/archives"
+WORLD_BACKUPPATH="$ROOT_BACKUPPATH/worlds"
+SERVER_BACKUPPATH="ROOT_BACKUPPATH/servers"
+RD_BACKUPPATH="$ROOT_BACKUPPATH/ramdisk"
 
 #Messages (sent to minecraft server console with "say" command)
-SAVE_OFF_MSG="Server going readonly..."
-SAVE_ON_MSG="Server going read-write..."
-BACKUP_START_MSG="SERVER BACKUP STARTING"
-BACKUP_DONE_MSG="SERVER BACKUP COMPLETE"
-BACKUP_FAIL_MSG="SERVER BACKUP FAILED"
-STOP_MSG="SERVER SHUTTING DOWN IN 15 SECONDS"
-RESTART_MSG="SERVER GOING FOR RESTART"
+SAVE_OFF_MSG='Server going readonly...'
+SAVE_ON_MSG='Server going read-write...'
+BACKUP_START_MSG='SERVER BACKUP STARTING'
+BACKUP_DONE_MSG='SERVER BACKUP COMPLETE'
+BACKUP_FAIL_MSG='SERVER BACKUP FAILED'
+STOP_MSG='SERVER SHUTTING DOWN IN 15 SECONDS'
+RESTART_MSG='SERVER GOING FOR RESTART'
 
 ############################[ Script Start]#############################
 
@@ -83,7 +87,7 @@ mc_start() {
         if mount -l -t tmpfs | grep $RD_PATH > /dev/null
         then echo "Unloading Ramdisk."
 
-          mcrd_save
+          mcrd_unload
           mcrd_unmount
 
         else echo "Ramdisk already unloaded!"
@@ -91,6 +95,24 @@ mc_start() {
       fi
 
     fi
+  fi
+}
+
+#Stops the service
+mc_stop() {
+  if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
+  then echo "$SERVICE is running... stopping."
+
+    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $STOP_MSG\"\015'" ; sleep 5   # Tell the users that the server is stopping, Wait 5 seconds
+    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-all\"\015'" ; sleep 10       # Save changes to the worlds, Wait 10 seconds
+    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"stop\"\015'" ; sleep 3            # Stop the server, Wait 3 seconds
+
+  else echo "$SERVICE was not running."
+  fi
+
+  if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
+  then echo "$SERVICE could not be shut down... still running."
+  else echo "$SERVICE is shut down."
   fi
 }
 
@@ -120,32 +142,13 @@ mc_saveon() {
   fi
 }
 
-#Stops the service
-mc_stop() {
-  if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
-  then echo "$SERVICE is running... stopping."
-
-    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $STOP_MSG\"\015'" ; sleep 5   # Tell the users that the server is stopping, Wait 5 seconds
-    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-all\"\015'" ; sleep 10       # Save changes to the worlds, Wait 10 seconds
-    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"stop\"\015'" ; sleep 3            # Stop the server, Wait 3 seconds
-
-  else echo "$SERVICE was not running."
-  fi
-
-  if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
-  then echo "$SERVICE could not be shut down... still running."
-  else echo "$SERVICE is shut down."
-  fi
-}
-
 #Backup the current world files
 mc_world_backup() {
-  
-  if [ $RAMDISK == 'true' ]
-  then 
-    WORLD_PATH=$RD_PATH/worlds
+
+  if [ $RAMDISK == 'true' ] && mount -l -t tmpfs | grep $RD_PATH > /dev/null
+  then WORLD_PATH="$RD_PATH/worlds"
   fi
-  
+
   echo "Backing Up Worlds"
   cd $WORLD_BACKUPPATH
 
@@ -233,9 +236,14 @@ mcrd_mount() {
   if mount -l -t tmpfs | grep $RD_PATH > /dev/null
   then echo "Ramdisk already mounted"
   else echo "Mounting Ramdisk at $RD_PATH"
+  
+    if [ ! -d $RD_PATH ]
+    then echo "$RD_PATH does not exist!" ; exit 1
+    fi
 
-    as_user "mount -t tmpfs -o size=$RD_SIZE tmpfs $RD_PATH"
+    mount -t tmpfs -o size=$RD_SIZE tmpfs $RD_PATH
     sleep 3
+    chown $USERNAME:$GROUPNAME $RD_PATH
 
     if mount -l -t tmpfs | grep $RD_PATH > /dev/null
     then echo "Ramdisk mounted at $RD_PATH"
@@ -248,7 +256,7 @@ mcrd_unmount() {
   if mount -l -t tmpfs | grep $RD_PATH > /dev/null
   then echo "Ramdisk mounted at $RD_PATH.... unmounting"
 
-    as_user "umount $RD_PATH"
+    umount $RD_PATH
     sleep 3
 
   else echo "Ramdisk was not mounted at $RD_PATH"
@@ -271,7 +279,7 @@ RUN_DIR=$(dirname $0)
 
     if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null   # Is service running?
     then echo "Tried to start but $SERVICE was already running!"              # Instance exists, tell the user
-    else echo "$SERVICE was not running... prepping RAMDISK."                 # Instance does not exist, tell user we are going to start it
+    else echo "$SERVICE was not running... loading Ramdisk."                  # Instance does not exist, tell user we are going to start it
 
       if [ ! -d $WORLD_PATH/$WORLD_NAME ]                                     # Checking for the  existance of a world using the name defined in server.properties
       then echo "$WORLD_NAME is not in $WORLD_PATH!"                          # If no world exists, tell the user
@@ -280,17 +288,19 @@ RUN_DIR=$(dirname $0)
         for dir in *                                                          # For each folder in WORLD_PATH,
         do
 
-          if [ ! -d $RD_PATH/worlds/$dir ]                                    # We are going to make sure it does not reside on the RAMDISK
+          if [ ! -d "$RD_PATH/worlds/$dir" ]                                  # We are going to make sure it does not reside on the RAMDISK
           then javwc=`expr match "$dir" '.*[0-9]'`                            # Expression to filter out the world backups (ignore something ending with a number)
 
-            if [ -d "$dir" ] && [ -f "$dir/level.dat" ] && [ $javwc -eq 0 ]   # Make sure it is a directory, and that it has a level.dat file in it, and the it IS NOT a backup
-            then as_user "cp -R $dir $RD_PATH/"                               # Copy the world from $WORLD_PATH to $RD_PATH
+            echo `pwd`
 
-              if [ -d $MC_PATH/$dir ]                                         # Are there folders or symlinks already in $MC_PATH?
+            if [ -d "$dir" ] && [ -f "$dir/level.dat" ] && [ $javwc -eq 0 ]   # Make sure it is a directory, and that it has a level.dat file in it, and the it IS NOT a backup
+            then as_user "cp -R $WORLD_PATH/$dir $RD_PATH/worlds"             # Copy the world from $WORLD_PATH to $RD_PATH
+
+              if [ -d "$MC_PATH/$dir" ]                                       # Are there folders or symlinks already in $MC_PATH?
               then as_user "mv $MC_PATH/$dir $MC_PATH/$dir.old"               # Rename them with the suffix ".old"
               fi
 
-              as_user "ln -s $RD_PATH/$dir $MC_PATH/$dir"                     # Setup the symlinks to the worlds on the RAMDISK
+              as_user "ln -s $RD_PATH/worlds/$dir $MC_PATH/$dir"              # Setup the symlinks to the worlds on the RAMDISK
             fi
           fi
         done
@@ -301,17 +311,14 @@ RUN_DIR=$(dirname $0)
   fi                                                                          # Close if statement "RAMDISK mounted?"
 }
 
-mcrd_save() {
-  if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null     # Check if the serviec is running
+mcrd_unload() {
+  if mount -l -t tmpfs | grep $RD_PATH > /dev/null                            # Check if the Ramdisk is mounted
   then
 
-    if [ ! -d $RD_PATH/$WORLD_NAME ]                                          # Check if $WORLD_NAME (whatevere it was named in server.properties) exists in $RD_PATH
+    if [ ! -d $RD_PATH/worlds/$WORLD_NAME ]                                   # Check if $WORLD_NAME (whatevere it was named in server.properties) exists in $RD_PATH
     then echo "Nothing in $RD_PATH to backup!"                                # Not found! Warn user!
     else echo "Saving ramdisk to disk."                                       # Else we have found something and will continue with the regime, warn user we are beginning
 
-      as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-off\"\015'"  # Send save-off command to the instance
-      as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-all\"\015'"  # Force save of world.
-      sleep 3
       cd $RD_PATH                                                             # Make sure we are in the $RD_PATH for the next series of commands
       filedate=$(date +"-%F-%H.%M")                                           # Set up our datestamp here.
 
@@ -321,10 +328,10 @@ mcrd_save() {
         if [ -d "$dir" ] && [ -f "$dir/level.dat" ]                           # Make sure it is a directory and verify itis a world by looking for "level.dat" inside of it.
         then
 
-          if [ -d $WORLD_PATH/$dir ]                                          # Now we check to see if the world folder we found already exists in the $WORLD_PATH
+          if [ -d "$WORLD_PATH/$dir" ]                                        # Now we check to see if the world folder we found already exists in the $WORLD_PATH
           then
             echo "Moving "$WORLD_PATH\/$dir" to "$WORLD_PATH\/$dir$filedate   # We tell the user what we are going to do
-            as_user "mv "$WORLD_PATH/$dir"/ "$WORLD_PATH\/$dir$filedate       # Then rename the found folder with a datestamp on the end of it's name
+            as_user "mv "$WORLD_PATH\/$dir"/ "$WORLD_PATH\/$dir$filedate      # Then rename the found folder with a datestamp on the end of it's name
           fi
 
           echo "$dir being copied to disk"                                    # Tell the user we are copying the RAMDISK
@@ -337,7 +344,26 @@ mcrd_save() {
       as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-on\"\015'"   # Send "save-on" to the instance
     fi
 
-  else echo "Nothing to save, $SERVICE is not running."                       # Service not running, nothing to save
+  else echo "Nothing to save, Ramdisk not mounted at $RD_PATH"                # Service not running, nothing to save
+  fi
+}
+
+mcrd_full_backup() {
+  if mount -l -t tmpfs | grep $RD_PATH > /dev/null
+  then
+
+    if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
+    then echo "$SERVICE is running, backing up Ramdisk at $RD_PATH"
+
+      mc_saveoff
+      as_user "cp -R $RD_PATH $RD_BACKUPPATH"
+      mc_saveon
+
+    else echo "Backing up Ramdisk at $RD_PATH"
+      as_user "cp -R $RD_PATH $RD_BACKUPPATH"
+    fi
+
+  else echo "Ramdisk not mounted at $RD_PATH !"
   fi
 }
 
@@ -350,7 +376,7 @@ case "$1" in
     mc_stop
     if [ $RAMDISK == 'true' ]
     then
-      mcrd_save
+      mcrd_unload
       mcrd_unmount
     fi
     ;;
@@ -365,9 +391,13 @@ case "$1" in
     fi
     ;;
   worldbackup)
-    DATE=$(date "+%Y.%m.%d")
+    DATE=$(date "+%Y-%m-%d")
     TIME=$(date "+%H-%M")
-    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $BACKUP_START_MSG\"\015'"
+    if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
+    then
+      as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $BACKUP_START_MSG\"\015'"
+    fi
+
     mc_saveoff
     mc_world_backup
     mc_world_backup_cksum
@@ -381,11 +411,14 @@ case "$1" in
     ;;
   rd2disk)
     # Backup RD contents
-    mcrd_save
+    
+    DATE=$(date "+%Y-%m-%d")
+    TIME=$(date "+%H-%M")
+    mcrd_full_backup
     ;;
 
   *)
-  echo "Usage: /etc/init.d/minecraft {start|stop|restart|status|start_rd|rd2disk|worldbackup}"
+  echo "Usage: /etc/init.d/minecraft {start|stop|restart|status|rd2disk|worldbackup}"
   exit 1
   ;;
 esac

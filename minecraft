@@ -1,6 +1,6 @@
 #!/bin/bash
 # /etc/init.d/minecraft
-# version 0.3.12 2011-12-21 (YYYY-MM-DD)
+# version 0.4.2 2011-12-27 (YYYY-MM-DD)
 
 ### BEGIN INIT INFO
 # Provides:   minecraft
@@ -16,8 +16,8 @@
 
 
 #Settings
-USERNAME="daniel"
-GROUPNAME="daniel"
+USERNAME="minecraft"
+GROUPNAME="CodeProAdmins"
 SCREEN_NAME="codecraft"
 BUILD="b1597"
 SERVICE="craftbukkit.jar"

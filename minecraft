@@ -70,6 +70,7 @@ mc_start() {
     then
       if mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null
       then echo "Ramdisk Loaded"
+        mcrd_load
       else echo "Loading Ramdisk"
         mcrd_mount
         mcrd_load

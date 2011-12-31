@@ -149,7 +149,7 @@ backup() {
   cd $REF_BUPATH
 
   # Check for directories with the current datestamp
-  if ls $REF_BUPATH | grep $DATE > /dev/null
+  if ls | grep $DATE > /dev/null
   then
     cd $DATE
   else
@@ -158,7 +158,7 @@ backup() {
   fi
 
   # Check for directories with the curent timestamp.
-  if ls $DATE | grep $TIME > /dev/null
+  if ls | grep $TIME > /dev/null
   then
     TIME="$TIME"_`date "+%S"`                             # Appened the current seconds time to $bu_time
     as_user "mkdir $REF_BUPATH/$DATE/$TIME"               # Make a directory with the name contained in $bu_time

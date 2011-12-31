@@ -87,10 +87,8 @@ mc_start() {
       then
         if mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null
         then echo "Unloading Ramdisk."
-
           mcrd_unload
           mcrd_unmount
-
         else echo "Ramdisk already unloaded!"
         fi
       fi
@@ -167,12 +165,14 @@ backup() {
     as_user "mkdir $REF_BUPATH/$DATE/$TIME"               # Make a directory with the current timestamp as the name
     as_user "cp -a $REF_PATH/* $REF_BUPATH/$DATE/$TIME"   # Copy all data from the $ROOT_PATH/$WORLD_DIR directory to the $bu_time directory
   fi
+  
+  echo "Backup finished"
 }
 
 #Check the integrity of the backup
 backup_cksum() {
 
-  echo "Running a Checksum of the Backups"
+  echo "Running checksum..."
   cd $ROOT_BUPATH
 
   if [ -d chksum ]
@@ -222,10 +222,10 @@ backup_cksum() {
   # Compare the values of the checksums
   if [ "$REF_checksum" = "$BACKUP_checksum" ]
   then
-    echo "Backup Complete"
+    echo "Backup Successful"
     as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $BACKUP_DONE_MSG\"\015'"
   else
-    echo "Backup failed! The source and target contents do not match!"
+    echo "Backup failed! The reference and backup contents do not match!"
     echo "Worlds: $REF_checksum" ; echo "Backup: $BACKUP_checksum"
     as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $BACKUP_FAIL_MSG\"\015'"
   fi
@@ -236,19 +236,19 @@ backup_cksum() {
 mcrd_mount() {
   if mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null
   then echo "Ramdisk already mounted"
-  else echo "Mounting Ramdisk at $ROOT_PATH/$RD_DIR"
+  else
   
     if [ ! -d $ROOT_PATH/$RD_DIR ]
-    then echo "$ROOT_PATH/$RD_DIR does not exist!" ; exit 1
+    then echo "Aborting service startup! $ROOT_PATH/$RD_DIR does not exist!" ; exit 1
+    else echo "Mounting ramdisk at $ROOT_PATH/$RD_DIR"
+      mount -t tmpfs -o size=$RD_SIZE tmpfs $ROOT_PATH/$RD_DIR
+      sleep 3
+      chown $USERNAME:$GROUPNAME $ROOT_PATH/$RD_DIR
     fi
-
-    mount -t tmpfs -o size=$RD_SIZE tmpfs $ROOT_PATH/$RD_DIR
-    sleep 3
-    chown $USERNAME:$GROUPNAME $ROOT_PATH/$RD_DIR
 
     if mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null
     then echo "Ramdisk mounted at $ROOT_PATH/$RD_DIR"
-    else echo "Could not mount Ramdisk. Does $ROOT_PATH/$RD_DIR exist?"
+    else echo "Aborting service startup! Could not mount Ramdisk!" ; exit 1
     fi
   fi
 }
@@ -256,10 +256,8 @@ mcrd_mount() {
 mcrd_unmount() {
   if mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null
   then echo "Ramdisk mounted at $ROOT_PATH/$RD_DIR.... unmounting"
-
     umount $ROOT_PATH/$RD_DIR
     sleep 3
-
   else echo "Ramdisk was not mounted at $ROOT_PATH/$RD_DIR"
   fi
 
@@ -307,7 +305,6 @@ mcrd_load() {
         done
       fi                                                                      # Close if statement "world exist?"
     fi                                                                        # Close if statement "RAMDISK mounted?"
-
   fi                                                                          # Close if statement "running?"
 }
 
@@ -319,32 +316,32 @@ mcrd_unload() {
     then echo "Can't unload ramdisk, $SERVICE is still running!"
     else
     
-      if [ ! -d $ROOT_PATH/$RD_DIR/worlds/$WORLD_NAME ]                         # Check if $WORLD_NAME (whatevere it was named in server.properties) exists in $ROOT_PATH/$RD_DIR
-      then echo "Nothing in $ROOT_PATH/$RD_DIR to backup!"                      # Not found! Warn user!
-      else echo "Saving ramdisk to disk."                                       # Else we have found something and will continue with the regime, warn user we are beginning
+      if [ ! -d "$ROOT_PATH/$RD_DIR/worlds/$WORLD_NAME" ]                     # Check if $WORLD_NAME (whatevere it was named in server.properties) exists in $ROOT_PATH/$RD_DIR
+      then echo "Nothing in $ROOT_PATH/$RD_DIR to backup!"                    # Not found! Warn user!
+      else echo "Saving ramdisk to disk."                                     # Else we have found something and will continue with the regime, warn user we are beginning
 
-        cd $ROOT_PATH/$RD_DIR/worlds                                            # Make sure we are in the $ROOT_PATH/$RD_DIR for the next series of commands
-        filedate=$(date +"-%F-%H.%M")                                           # Set up our datestamp here.
+        cd $ROOT_PATH/$RD_DIR/worlds                                          # Make sure we are in the $ROOT_PATH/$RD_DIR for the next series of commands
+        filedate=$(date +"-%F-%H.%M")                                         # Set up our datestamp here.
 
-        for dir in *                                                            # For each directory inside $ROOT_PATH/$RD_DIR, we are going to perform the following series of commands
+        for dir in *                                                          # For each directory inside $ROOT_PATH/$RD_DIR, we are going to perform the following series of commands
         do
 
-          if [ -d "$dir" ] && [ -f "$dir/level.dat" ]                           # Make sure it is a directory and verify itis a world by looking for "level.dat" inside of it.
+          if [ -d "$dir" ] && [ -f "$dir/level.dat" ]                         # Make sure it is a directory and verify itis a world by looking for "level.dat" inside of it.
           then
 
-            if [ -d "$ROOT_PATH/$WORLD_DIR/$dir" ]                                                # Now we check to see if the world folder we found already exists in the $ROOT_PATH/$WORLD_DIR
+            if [ -d "$ROOT_PATH/$WORLD_DIR/$dir" ]                                          # Now we check to see if the world folder we found already exists in the $ROOT_PATH/$WORLD_DIR
             then
-              echo "Moving "$ROOT_PATH/$WORLD_DIR/$dir" to "$ROOT_PATH/$WORLD_DIR/$dir$filedate   # We tell the user what we are going to do
-              as_user "mv $ROOT_PATH/$WORLD_DIR/$dir $ROOT_PATH/$WORLD_DIR/$dir$filedate"         # Then rename the found folder with a datestamp on the end of it's name
+              echo "Renaming $dir to $dir$filedate"                                         # We tell the user what we are going to do
+              as_user "mv $ROOT_PATH/$WORLD_DIR/$dir $ROOT_PATH/$WORLD_DIR/$dir$filedate"   # Then rename the found folder with a datestamp on the end of it's name
             fi
 
-            echo "$dir being copied to disk"                                                      # Tell the user we are copying the RAMDISK
-            as_user "cp -R $ROOT_PATH/$RD_DIR/worlds/$dir $ROOT_PATH/$WORLD_DIR"                  # Copy the world from $ROOT_PATH/$RD_DIR to $ROOT_PATH/$WORLD_DIR
+            echo "$dir being copied to disk"                                                # Tell the user we are copying the RAMDISK
+            as_user "cp -R $ROOT_PATH/$RD_DIR/worlds/$dir $ROOT_PATH/$WORLD_DIR"            # Copy the world from $ROOT_PATH/$RD_DIR to $ROOT_PATH/$WORLD_DIR
 
-          else echo "Nothing copied from ramdisk."                              # If no world folders are found, we tell the user.
+          else echo "Nothing copied from ramdisk."                            # If no world folders are found, we tell the user.
           fi
 
-        done                                                                    # END for loop (directory inside $ROOT_PATH/$RD_DIR)
+        done                                                                  # END for loop (directory inside $ROOT_PATH/$RD_DIR)
       fi
 
       cd $ROOT_PATH/$SERVER_DIR/$BUILD
@@ -352,15 +349,15 @@ mcrd_unload() {
       for dir in * 
       do
         if [ -d "$dir".old ] && [ -f "$dir/level.dat" ]
-        then 
-          rm -rf $dir
-          as_user "cd $ROOT_PATH/$SERVER_DIR/$BUILD ; mv '$dir'.old $dir"
+        then
+          rm -rf $dir                                                       # Remove the links pointing to the world directories on the ramdisk
+          as_user "cd $ROOT_PATH/$SERVER_DIR/$BUILD ; mv '$dir'.old $dir"   # Remove ".old" from the name of the links pointing to the world directories on the hard disk
         fi
       done
       
     fi
 
-  else echo "Nothing to save, Ramdisk not mounted at $ROOT_PATH/$RD_DIR"      # Service not running, nothing to save
+  else echo "Nothing to save, ramdisk not mounted at $ROOT_PATH/$RD_DIR"      # Service not running, nothing to save
   fi
 }
 
@@ -439,7 +436,7 @@ case "$1" in
     ;;
 
   *)
-  echo "Usage: /etc/init.d/minecraft {start|stop|restart|status|rd2disk|worldbackup}"
+  echo "Usage: /etc/init.d/minecraft {start|stop|restart|status|worldbackup|rdbackup}"
   exit 1
   ;;
 esac

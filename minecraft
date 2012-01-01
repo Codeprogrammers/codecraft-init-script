@@ -272,40 +272,36 @@ mcrd_load() {
   if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null   # Is service running?
   then echo "Cannot load ramdisk, $SERVICE is running! "
   else echo "Loading ramdisk..."
-  
-    if mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null
+
+    if [ ! -d "$ROOT_PATH/$RD_DIR/worlds" ]
     then
+      as_user "mkdir $ROOT_PATH/$RD_DIR/worlds"
+    fi
 
-      if [ ! -d "$ROOT_PATH/$RD_DIR/worlds" ]
-      then
-        as_user "mkdir $ROOT_PATH/$RD_DIR/worlds"
-      fi
+    if [ ! -d "$ROOT_PATH/$WORLD_DIR/$WORLD_NAME" ]                         # Checking for the  existance of a world using the name defined in server.properties
+    then echo "$WORLD_NAME is not in $ROOT_PATH/$WORLD_DIR !"               # If no world exists, tell the user
+    else cd $ROOT_PATH/$WORLD_DIR                                           # If the world does exist, cd to $ROOT_PATH/$WORLD_DIR
 
-      if [ ! -d "$ROOT_PATH/$WORLD_DIR/$WORLD_NAME" ]                         # Checking for the  existance of a world using the name defined in server.properties
-      then echo "$WORLD_NAME is not in $ROOT_PATH/$WORLD_DIR !"               # If no world exists, tell the user
-      else cd $ROOT_PATH/$WORLD_DIR                                           # If the world does exist, cd to $ROOT_PATH/$WORLD_DIR
+      for dir in *                                                          # For each folder in $ROOT_PATH/$WORLD_DIR,
+      do
 
-        for dir in *                                                          # For each folder in $ROOT_PATH/$WORLD_DIR,
-        do
+        if [ ! -d "$ROOT_PATH/$RD_DIR/worlds/$dir" ]                        # We are going to make sure it does not reside on the RAMDISK
+        then javwc=`expr match "$dir" '.*[0-9]'`                            # Expression to filter out the world backups (ignore something ending with a number)
 
-          if [ ! -d "$ROOT_PATH/$RD_DIR/worlds/$dir" ]                        # We are going to make sure it does not reside on the RAMDISK
-          then javwc=`expr match "$dir" '.*[0-9]'`                            # Expression to filter out the world backups (ignore something ending with a number)
+          if [ -d "$dir" ] && [ -f "$ROOT_PATH/$WORLD_DIR/$dir/level.dat" ] && [ $javwc -eq 0 ]   # Make sure it is a directory, and that it has a level.dat file in it, and the it IS NOT a backup
+          then 
+            cp -R $dir $ROOT_PATH/$RD_DIR/worlds                                             # Copy the world from $ROOT_PATH/$WORLD_DIR to $ROOT_PATH/$RD_DIR
+            chown -R $USERNAME:$GROUPNAME $ROOT_PATH/$RD_DIR/worlds
 
-            if [ -d "$dir" ] && [ -f "$ROOT_PATH/$WORLD_DIR/$dir/level.dat" ] && [ $javwc -eq 0 ]   # Make sure it is a directory, and that it has a level.dat file in it, and the it IS NOT a backup
-            then 
-              cp -R $dir $ROOT_PATH/$RD_DIR/worlds                                             # Copy the world from $ROOT_PATH/$WORLD_DIR to $ROOT_PATH/$RD_DIR
-              chown -R $USERNAME:$GROUPNAME $ROOT_PATH/$RD_DIR/worlds
-
-              if [ -d "$ROOT_PATH/$SERVER_DIR/$BUILD/$dir" ]                                                              # Are there folders or symlinks already in $ROOT_PATH/$SERVER_DIR/$BUILD?
-              then as_user "mv $ROOT_PATH/$SERVER_DIR/$BUILD/$dir '$ROOT_PATH/$SERVER_DIR/$BUILD/$dir'.old"               # Rename them with the suffix ".old"
-              fi
-
-              as_user "ln -s $ROOT_PATH/$RD_DIR/worlds/$dir $ROOT_PATH/$SERVER_DIR/$BUILD/$dir"                           # Setup the symlinks to the worlds on the RAMDISK
+            if [ -d "$ROOT_PATH/$SERVER_DIR/$BUILD/$dir" ]                                                              # Are there folders or symlinks already in $ROOT_PATH/$SERVER_DIR/$BUILD?
+            then as_user "mv $ROOT_PATH/$SERVER_DIR/$BUILD/$dir '$ROOT_PATH/$SERVER_DIR/$BUILD/$dir'.old"               # Rename them with the suffix ".old"
             fi
+            as_user "ln -s $ROOT_PATH/$RD_DIR/worlds/$dir $ROOT_PATH/$SERVER_DIR/$BUILD/$dir"                           # Setup the symlinks to the worlds on the RAMDISK
+
           fi
-        done
-      fi                                                                      # Close if statement "world exist?"
-    fi                                                                        # Close if statement "RAMDISK mounted?"
+        fi
+      done
+    fi                                                                      # Close if statement "world exist?"
   fi                                                                          # Close if statement "running?"
 }
 

@@ -1,7 +1,7 @@
 
 # [Codeprogrammers.net](http://codeprogrammers.net)
 
-*These scripts are free to use and modify as you see fit. We do however ask that credit is given where it is due. Please don't claim our work as your own!*
+*These scripts are free to use and modify under the GPLv2 license as you see fit. We do however ask that credit is given where it is due. Please don't claim our work as your own!*
 <br />
 
 ###DISCLAIMER:

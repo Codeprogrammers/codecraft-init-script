@@ -14,7 +14,7 @@
 # Description:    Starts the minecraft server
 ### END INIT INFO
 
-# chkconfig: 2345 99 01
+# chkconfig 2345 99 01
 
 # Codecraft-init-script: Linux init script for starting minecraft as a service
 # Copyright (C) 2011-2012  Daniel Hodgson, William Haggerty, Codeprogrammers
@@ -203,7 +203,15 @@ mc_saveon() {
 
 backup() {
   echo "Backing Up $REF_BUDIR"
-  cd $REF_BUPATH
+  cd $ROOT_BUPATH
+
+  if [ ! -d $REF_BUDIR ] 
+  then
+    as_user "mkdir $ROOT_BUPATH/$REF_BUDIR"
+    cd $REF_BUDIR
+  else 
+    cd $REF_BUDIR
+  fi
 
   # Check for directories with the current datestamp
   if ls | grep $DATE > /dev/null
@@ -515,7 +523,6 @@ case "$1" in
   worldbackup)
     DATE=$(date "+%Y-%m-%d")
     TIME=$(date "+%H-%M")
-    REF_BUPATH="$ROOT_BUPATH/$WORLD_BUDIR"
     REF_BUDIR="$WORLD_BUDIR"
     REF_CSPATH="$ROOT_BUPATH/chksum/$WORLD_BUDIR"
     if [ $RAMDISK == 'true' ] && mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null
@@ -537,7 +544,6 @@ case "$1" in
   rdbackup)
     DATE=$(date "+%Y-%m-%d")
     TIME=$(date "+%H-%M")
-    REF_BUPATH="$ROOT_BUPATH/$RD_BUDIR"
     REF_BUDIR="$RD_BUDIR"
     REF_CSPATH="$ROOT_BUPATH/chksum/$RD_BUDIR"
     REF_PATH="$ROOT_PATH/$RD_DIR"
@@ -546,10 +552,13 @@ case "$1" in
       as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $BACKUP_RD_START_MSG\"\015'"
     fi
 
-    mc_saveoff
-    backup
-    backup_cksum
-    mc_saveon
+    if mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null
+    then
+      mc_saveoff
+      backup
+      backup_cksum
+      mc_saveon
+    else echo "Ramdisk not mounted, nothing to do."
     ;;
 
   *)

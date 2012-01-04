@@ -14,6 +14,24 @@
 # Description:    Starts the minecraft server
 ### END INIT INFO
 
+# chkconfig 2345 99 01
+
+# Codecraft-init-script: Linux init script for starting minecraft as a service
+# Copyright (C) 2011-2012  Daniel Hodgson, William Haggerty, Codeprogrammers
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #Settings
 USERNAME="minecraft"
@@ -30,9 +48,6 @@ WORLD_DIR="worlds"
 SERVER_DIR="servers"
 RD_DIR="ramdisk"
 ROOT_BUPATH="$ROOT_PATH/archives"
-WORLD_BUDIR="worlds"
-SERVER_BUDIR="servers"
-RD_BUDIR="ramdisk"
 
 #Messages (sent to minecraft server console with "say" command)
 SAVE_OFF_MSG="Server going readonly..."
@@ -45,6 +60,8 @@ STOP_MSG="SERVER SHUTTING DOWN IN 15 SECONDS"
 RESTART_MSG="SERVER GOING FOR RESTART"
 
 ############################[ Script Start]#############################
+
+lockfile="/var/lock/subsys/minecraft"
 
 #Grabbing world name from $MC_PATH/server.properties
 WORLD_NAME=$(cat $ROOT_PATH/$SERVER_DIR/$BUILD/server.properties | fgrep 'level-name=' | sed -e s/.*level-name=//)
@@ -183,7 +200,15 @@ mc_saveon() {
 
 backup() {
   echo "Backing Up $REF_BUDIR"
-  cd $REF_BUPATH
+  cd $ROOT_BUPATH
+
+  if [ ! -d $REF_BUDIR ] 
+  then
+    as_user "mkdir $ROOT_BUPATH/$REF_BUDIR"
+    cd $REF_BUDIR
+  else 
+    cd $REF_BUDIR
+  fi
 
   # Check for directories with the current datestamp
   if ls | grep $DATE > /dev/null
@@ -460,6 +485,7 @@ mcrd_unload() {
 case "$1" in
   start)
     mc_start
+    touch $lockfile
     ;;
 
   stop)
@@ -469,6 +495,7 @@ case "$1" in
       mcrd_unload
       mcrd_unmount
     fi
+    rm -f $lockfile
     ;;
 
   restart)
@@ -493,8 +520,7 @@ case "$1" in
   worldbackup)
     DATE=$(date "+%Y-%m-%d")
     TIME=$(date "+%H-%M")
-    REF_BUPATH="$ROOT_BUPATH/$WORLD_BUDIR"
-    REF_BUDIR="$WORLD_BUDIR"
+    REF_BUDIR="$WORLD_DIR"
     REF_CSPATH="$ROOT_BUPATH/chksum/$WORLD_BUDIR"
     if [ $RAMDISK == 'true' ] && mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null
     then REF_PATH="$ROOT_PATH/$RD_DIR/worlds"
@@ -515,8 +541,7 @@ case "$1" in
   rdbackup)
     DATE=$(date "+%Y-%m-%d")
     TIME=$(date "+%H-%M")
-    REF_BUPATH="$ROOT_BUPATH/$RD_BUDIR"
-    REF_BUDIR="$RD_BUDIR"
+    REF_BUDIR="$RD_DIR"
     REF_CSPATH="$ROOT_BUPATH/chksum/$RD_BUDIR"
     REF_PATH="$ROOT_PATH/$RD_DIR"
     if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
@@ -524,10 +549,13 @@ case "$1" in
       as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $BACKUP_RD_START_MSG\"\015'"
     fi
 
-    mc_saveoff
-    backup
-    backup_cksum
-    mc_saveon
+    if mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null
+    then
+      mc_saveoff
+      backup
+      backup_cksum
+      mc_saveon
+    else echo "Ramdisk not mounted, nothing to do."
     ;;
 
   *)

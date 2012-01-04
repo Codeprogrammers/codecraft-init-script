@@ -48,9 +48,6 @@ WORLD_DIR="worlds"
 SERVER_DIR="servers"
 RD_DIR="ramdisk"
 ROOT_BUPATH="$ROOT_PATH/archives"
-WORLD_BUDIR="worlds"
-SERVER_BUDIR="servers"
-RD_BUDIR="ramdisk"
 
 #Messages (sent to minecraft server console with "say" command)
 SAVE_OFF_MSG="Server going readonly..."
@@ -523,7 +520,7 @@ case "$1" in
   worldbackup)
     DATE=$(date "+%Y-%m-%d")
     TIME=$(date "+%H-%M")
-    REF_BUDIR="$WORLD_BUDIR"
+    REF_BUDIR="$WORLD_DIR"
     REF_CSPATH="$ROOT_BUPATH/chksum/$WORLD_BUDIR"
     if [ $RAMDISK == 'true' ] && mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null
     then REF_PATH="$ROOT_PATH/$RD_DIR/worlds"
@@ -544,7 +541,7 @@ case "$1" in
   rdbackup)
     DATE=$(date "+%Y-%m-%d")
     TIME=$(date "+%H-%M")
-    REF_BUDIR="$RD_BUDIR"
+    REF_BUDIR="$RD_DIR"
     REF_CSPATH="$ROOT_BUPATH/chksum/$RD_BUDIR"
     REF_PATH="$ROOT_PATH/$RD_DIR"
     if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null

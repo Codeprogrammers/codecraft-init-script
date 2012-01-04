@@ -14,6 +14,8 @@
 # Description:    Starts the minecraft server
 ### END INIT INFO
 
+# chkconfig: 2345 99 01
+
 # Codecraft-init-script: Linux init script for starting minecraft as a service
 # Copyright (C) 2011-2012  Daniel Hodgson, William Haggerty, Codeprogrammers
 #
@@ -61,6 +63,8 @@ STOP_MSG="SERVER SHUTTING DOWN IN 15 SECONDS"
 RESTART_MSG="SERVER GOING FOR RESTART"
 
 ############################[ Script Start]#############################
+
+lockfile="/var/lock/subsys/minecraft"
 
 #Grabbing world name from $MC_PATH/server.properties
 WORLD_NAME=$(cat $ROOT_PATH/$SERVER_DIR/$BUILD/server.properties | fgrep 'level-name=' | sed -e s/.*level-name=//)
@@ -476,6 +480,7 @@ mcrd_unload() {
 case "$1" in
   start)
     mc_start
+    touch $lockfile
     ;;
 
   stop)
@@ -485,6 +490,7 @@ case "$1" in
       mcrd_unload
       mcrd_unmount
     fi
+    rm -f $lockfile
     ;;
 
   restart)

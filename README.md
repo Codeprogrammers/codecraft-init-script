@@ -17,8 +17,13 @@ This script is designed to be as easy to use, and as useful as possible. However
 ### Step 1: *Directory Setup*
 
 This script expects certain folders to be placed in certain directories. We'll be telling the script the name of these folders in Step 2, but we need to create them first.
-Any variable ending in `PATH` should contain a full file path locaiton (i.e. anything that starts with "/", for example: `/mnt/codecraft`).
+Any variable ending in `PATH` should contain a full directory path (i.e. anything that starts with "/", for example: `/mnt/codecraft`).
+
+* The exception to this is the `ROOT_BUPATH` variable which can also begin with the `ROOT_PATH` variable instead of a "/"
+
 Any variable ending in `DIR` should contain the **name of the folder only**.
+<br />
+<br />
 
 1. Make the root directory for your server. This will be used by the `$ROOT_PATH` variable.
  * Example: `/mnt/codecraft`
@@ -46,13 +51,21 @@ First things first. If you haven't already, go grab the latest version of the sc
 
 1. Download either the vanilla minecraft server software or bukkit and place it in `$ROOT_PATH/$SERVER_DIR/$BUILD`
 
-2. Extract the script from the tarball and change the settings and file paths/directory names as you see fit.
+2. Place your worlds into the `$WORLD_DIR` directory and place symbolic links in `$ROOT_PATH/$SERVER_DIR/$BUILD` which point to the worlds in `$ROOT_PATH/$WORLD_DIR`
+ * To do this, open up a terminal and type the following (replacing the variables with your chosen directory paths):
+
+ * `cd $ROOT_PATH/$SERVER_DIR/$BUILD`
+ * `ln -s $ROOT_PATH/$WORLD_DIR/[world_name_here] [world_name_here]`
+ * Repeat the last command for every world on your server.
+ * **Note:** If you don't currently have any worlds, you'll need to run the service first (bukkit/minecraft will automatically create them), and then move the worlds into the `$WORLD_DIR` directory and issue the afformentioned commands.
+
+3. Extract the script from the tarball and change the settings and file paths/directory names as you see fit.
  * More information on configuraiton can be found in the Notes section.
 
-3. Place the script in your /etc/init.d folder.
+4. Place the script in your /etc/init.d folder.
  * Make sure the script has permission to execute (just `chmod +x minecraft` and that should do it).
 
-4. Configure the script to start Minecraft/Bukkit on startup and stop it on shutdown.
+5. Configure the script to start Minecraft/Bukkit on startup and stop it on shutdown.
  * __*RHEL / CentOS:*__ Run in terminal `chkconfig --add minecraft`
  * __*Debian / Ubuntu:*__ Run in terminal `update-rc.d -n minecraft defaults`
 

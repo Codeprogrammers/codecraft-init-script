@@ -556,6 +556,7 @@ case "$1" in
       backup_cksum
       mc_saveon
     else echo "Ramdisk not mounted, nothing to do."
+    fi
     ;;
 
   *)

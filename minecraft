@@ -469,6 +469,40 @@ mcrd_unload() {
   fi
 }
 
+#--------------------------+
+# rsync incremental backup |
+#--------------------------+
+# Experimental feature: rsync
+# flags in use:
+#     --recursive  - Goes though each folder to copy files
+#     --times      - Preserves time stamps on files
+#     --perms      - Preserves permissions on files
+#     --progress   - \
+#     --stats      - |> Allows user to see what is being copied in detail (will be removed when finished)
+#     --verbose    - /
+#     --dry-run    - Only tests the rsync command, will not touch any files
+
+rsync_bu() {
+  if mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null
+  then
+    if [ ! -d "$ROOT_PATH/$RD_DIR/worlds/$WORLD_NAME" ]
+      then echo "Nothing in $ROOT_PATH/$RD_DIR to backup!"
+    else echo "Saving ramdisk to disk."
+      mc_saveoff
+      cd $ROOT_PATH/$RD_DIR/worlds
+      for dir in *
+      do
+        if [ -d "$dir" ] && [ -f "$dir/level.dat" ]
+          then echo "$dir being copied to disk"
+          as_user "rsync --recursive --times --perms  --progress --stats --verbose --dry-run $ROOT_PATH/$RD_DIR/worlds/$dir $ROOT_PATH/$WORLD_DIR"
+        else echo "Nothing copied from ramdisk."
+        fi
+      done
+      mc_saveon
+    fi
+  else echo "Nothing to save, ramdisk not mounted at $ROOT_PATH/$RD_DIR"
+  fi
+}
 
 #---------------------+
 # Commandline parsing |

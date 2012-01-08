@@ -593,6 +593,10 @@ case "$1" in
     fi
     ;;
 
+  rsync_bu)
+    rsync_bu
+    ;;
+
   *)
   echo "Usage: /etc/init.d/minecraft {start|stop|restart|status|worldbackup|rdbackup}"
   exit 1

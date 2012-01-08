@@ -284,8 +284,8 @@ backup_cksum() {
   as_user "cd $REF_PATH ; tar -cf checksum.tar *"
   as_user "mv $REF_PATH/checksum.tar $REF_CSPATH/reference"
 
-  as_user "cd $REF_BUPATH/$DATE/$TIME ; tar -cf checksum.tar *"
-  as_user "mv $REF_BUPATH/$DATE/$TIME/checksum.tar $REF_CSPATH/backup"
+  as_user "cd $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME ; tar -cf checksum.tar *"
+  as_user "mv $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME/checksum.tar $REF_CSPATH/backup"
 
   cd $REF_CSPATH
   REF_checksum=$(ls reference | cksum)   # Set $REF_checksum to the value of the checksum of the current worlds' tarball

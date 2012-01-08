@@ -392,7 +392,8 @@ mcrd_load() {
 
           if [ -d "$dir" ] && [ -f "$ROOT_PATH/$WORLD_DIR/$dir/level.dat" ] && [ $javwc -eq 0 ]             # Make sure it is a directory, and that it has a level.dat file in it, and the it IS NOT a backup
           then
-            as_user "cp -R $dir $ROOT_PATH/$RD_DIR/worlds"                                                            # Copy the world from $ROOT_PATH/$WORLD_DIR to $ROOT_PATH/$RD_DIR
+            cp -R $dir $ROOT_PATH/$RD_DIR/worlds                                                            # Copy the world from $ROOT_PATH/$WORLD_DIR to $ROOT_PATH/$RD_DIR
+            chown -R $USERNAME:$GROUPNAME $ROOT_PATH/$RD_DIR/worlds
 
             if [ -d "$ROOT_PATH/$SERVER_DIR/$BUILD/$dir" ]                                                  # Are there folders or symlinks already in $ROOT_PATH/$SERVER_DIR/$BUILD?
             then as_user "mv $ROOT_PATH/$SERVER_DIR/$BUILD/$dir '$ROOT_PATH/$SERVER_DIR/$BUILD/$dir'.old"   # Rename them with the suffix ".old"

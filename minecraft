@@ -215,7 +215,7 @@ backup() {
   then
     cd $DATE
   else
-    as_user "mkdir $REF_BUPATH/$DATE"
+    as_user "mkdir $ROOT_BUPATH/$REF_BUDIR/$DATE"
     cd $DATE
   fi
 
@@ -223,11 +223,11 @@ backup() {
   if ls | grep $TIME > /dev/null
   then
     TIME="$TIME"_`date "+%S"`                             # Appened the current seconds time to $bu_time
-    as_user "mkdir $REF_BUPATH/$DATE/$TIME"
-    as_user "cp -a $REF_PATH/* $REF_BUPATH/$DATE/$TIME"
+    as_user "mkdir $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
+    as_user "cp -a $REF_PATH/* $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
   else
-    as_user "mkdir $REF_BUPATH/$DATE/$TIME"
-    as_user "cp -a $REF_PATH/* $REF_BUPATH/$DATE/$TIME"
+    as_user "mkdir $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
+    as_user "cp -a $REF_PATH/* $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
   fi
 
   echo "Backup finished"
@@ -284,8 +284,8 @@ backup_cksum() {
   as_user "cd $REF_PATH ; tar -cf checksum.tar *"
   as_user "mv $REF_PATH/checksum.tar $REF_CSPATH/reference"
 
-  as_user "cd $REF_BUPATH/$DATE/$TIME ; tar -cf checksum.tar *"
-  as_user "mv $REF_BUPATH/$DATE/$TIME/checksum.tar $REF_CSPATH/backup"
+  as_user "cd $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME ; tar -cf checksum.tar *"
+  as_user "mv $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME/checksum.tar $REF_CSPATH/backup"
 
   cd $REF_CSPATH
   REF_checksum=$(ls reference | cksum)   # Set $REF_checksum to the value of the checksum of the current worlds' tarball
@@ -521,7 +521,7 @@ case "$1" in
     DATE=$(date "+%Y-%m-%d")
     TIME=$(date "+%H-%M")
     REF_BUDIR="$WORLD_DIR"
-    REF_CSPATH="$ROOT_BUPATH/chksum/$WORLD_BUDIR"
+    REF_CSPATH="$ROOT_BUPATH/chksum/$WORLD_DIR"
     if [ $RAMDISK == 'true' ] && mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null
     then REF_PATH="$ROOT_PATH/$RD_DIR/worlds"
     else REF_PATH="$ROOT_PATH/$WORLD_DIR"
@@ -542,7 +542,7 @@ case "$1" in
     DATE=$(date "+%Y-%m-%d")
     TIME=$(date "+%H-%M")
     REF_BUDIR="$RD_DIR"
-    REF_CSPATH="$ROOT_BUPATH/chksum/$RD_BUDIR"
+    REF_CSPATH="$ROOT_BUPATH/chksum/$RD_DIR"
     REF_PATH="$ROOT_PATH/$RD_DIR"
     if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
     then

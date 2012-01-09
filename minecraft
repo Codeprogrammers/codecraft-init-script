@@ -41,6 +41,7 @@ BUILD="b1597"
 SERVICE="craftbukkit.jar"
 INVOCATION="java -Xms512M -Xmx1024M -jar craftbukkit.jar"
 RAMDISK="true"
+RD_SIZE="128m"
 
 #File Paths/Names
 ROOT_PATH="/mnt/codecraft"
@@ -388,14 +389,16 @@ mcrd_mount() {
 mcrd_unmount() {
   if mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null
   then echo "Ramdisk mounted at $ROOT_PATH/$RD_DIR.... unmounting"
-    umount $ROOT_PATH/$RD_DIR
-    sleep 3
-  else echo "Ramdisk was not mounted at $ROOT_PATH/$RD_DIR"
-  fi
 
-  if mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null
-  then echo "Could not unmount ramdisk at $ROOT_PATH/$RD_DIR"
-  else echo "Ramdisk unmounted"
+    while mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null
+    do
+      sleep 2
+      umount $ROOT_PATH/$RD_DIR
+      sleep 1
+    done
+    echo "Ramdisk unmounted"
+
+  else echo "Ramdisk was not mounted at $ROOT_PATH/$RD_DIR"
   fi
 }
 

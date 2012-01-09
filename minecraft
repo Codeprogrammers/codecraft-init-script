@@ -251,43 +251,43 @@ backup_cksum() {
   if [ -d chksum ]
   then cd chksum
 
-    if [ -d $REF_BUDIR ]   #  $REF_CSPATH = $ROOT_BUPATH/chksum/$REF_BUDIR. Since it seems as though we need to
+    if [ -d $REF_BUDIR ]   #  $CS_PATH = $ROOT_BUPATH/chksum/$REF_BUDIR. Since it seems as though we need to
     then cd $REF_BUDIR     #+ use asbolute paths, we might as well make another variable to lighten the load.
 
       if [ -d reference ]
       then
         rm -rf reference
-        as_user "mkdir $REF_CSPATH/reference"
+        as_user "mkdir $CS_PATH/reference"
       else
-        as_user "mkdir $REF_CSPATH/reference"
+        as_user "mkdir $CS_PATH/reference"
       fi
 
       if [ -d backup ]
       then
         rm -rf backup
-        as_user "mkdir $REF_CSPATH/backup"
+        as_user "mkdir $CS_PATH/backup"
       else
-        as_user "mkdir $REF_CSPATH/backup"
+        as_user "mkdir $CS_PATH/backup"
       fi
 
     else
-      as_user "mkdir $REF_CSPATH ; cd $REF_CSPATH"
-      as_user "mkdir $REF_CSPATH/reference ; mkdir $REF_CSPATH/backup"
+      as_user "mkdir $CS_PATH ; cd $CS_PATH"
+      as_user "mkdir $CS_PATH/reference ; mkdir $CS_PATH/backup"
     fi
 
   else
     as_user "mkdir $ROOT_BUPATH/chksum ; cd $ROOT_BUPATH/chksum"
-    as_user "mkdir $REF_CSPATH ; cd $REF_CSPATH"
-    as_user "mkdir $REF_CSPATH/reference ; mkdir $REF_CSPATH/backup"
+    as_user "mkdir $CS_PATH ; cd $CS_PATH"
+    as_user "mkdir $CS_PATH/reference ; mkdir $CS_PATH/backup"
   fi
 
   as_user "cd $REF_PATH ; tar -cf checksum.tar *"
-  as_user "mv $REF_PATH/checksum.tar $REF_CSPATH/reference"
+  as_user "mv $REF_PATH/checksum.tar $CS_PATH/reference"
 
   as_user "cd $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME ; tar -cf checksum.tar *"
-  as_user "mv $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME/checksum.tar $REF_CSPATH/backup"
+  as_user "mv $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME/checksum.tar $CS_PATH/backup"
 
-  cd $REF_CSPATH
+  cd $CS_PATH
   REF_checksum=$(ls reference | cksum)   # Set $REF_checksum to the value of the checksum of the current worlds' tarball
   BACKUP_checksum=$(ls backup | cksum)   # Set $BACKUP_checksum to the value of the checksum of the newest backup's tarball
 
@@ -559,7 +559,7 @@ case "$1" in
     DATE=$(date "+%Y-%m-%d")
     TIME=$(date "+%H-%M")
     REF_BUDIR="$WORLD_DIR"
-    REF_CSPATH="$ROOT_BUPATH/chksum/$WORLD_DIR"
+    CS_PATH="$ROOT_BUPATH/chksum/$WORLD_DIR"
     if [ $RAMDISK == 'true' ] && mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null
     then REF_PATH="$ROOT_PATH/$RD_DIR/worlds"
     else REF_PATH="$ROOT_PATH/$WORLD_DIR"
@@ -580,7 +580,7 @@ case "$1" in
     DATE=$(date "+%Y-%m-%d")
     TIME=$(date "+%H-%M")
     REF_BUDIR="$RD_DIR"
-    REF_CSPATH="$ROOT_BUPATH/chksum/$RD_DIR"
+    CS_PATH="$ROOT_BUPATH/chksum/$RD_DIR"
     REF_PATH="$ROOT_PATH/$RD_DIR"
     if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
     then

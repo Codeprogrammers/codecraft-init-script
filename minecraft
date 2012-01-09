@@ -34,8 +34,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #Settings
-USERNAME="minecraft"
-GROUPNAME="CodeProAdmins"
+USERNAME="daniel"
+GROUPNAME="daniel"
 SCREEN_NAME="codecraft"
 BUILD="b1597"
 SERVICE="craftbukkit.jar"
@@ -517,47 +517,56 @@ case "$1" in
     fi
     ;;
 
-  worldbackup)
-    DATE=$(date "+%Y-%m-%d")
-    TIME=$(date "+%H-%M")
-    REF_BUDIR="$WORLD_DIR"
-    CS_PATH="$ROOT_BUPATH/chksum/$WORLD_DIR"
-    if [ $RAMDISK == 'true' ] && mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null
-    then REF_PATH="$ROOT_PATH/$RD_DIR/worlds"
-    else REF_PATH="$ROOT_PATH/$WORLD_DIR"
-    fi
+  backup)
+  case "$2" in
+    worlds)
+      DATE=$(date "+%Y-%m-%d")
+      TIME=$(date "+%H-%M")
+      REF_BUDIR="$WORLD_DIR"
+      CS_PATH="$ROOT_BUPATH/chksum/$WORLD_DIR"
+      if [ $RAMDISK == 'true' ] && mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null
+      then REF_PATH="$ROOT_PATH/$RD_DIR/worlds"
+      else REF_PATH="$ROOT_PATH/$WORLD_DIR"
+      fi
 
-    if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
-    then
-      as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $BACKUP_START_MSG\"\015'"
-    fi
+      if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
+      then
+        as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $BACKUP_START_MSG\"\015'"
+      fi
 
-    mc_saveoff
-    backup
-    backup_cksum
-    mc_saveon
-    ;;
-
-  rdbackup)
-    DATE=$(date "+%Y-%m-%d")
-    TIME=$(date "+%H-%M")
-    REF_BUDIR="$RD_DIR"
-    CS_PATH="$ROOT_BUPATH/chksum/$RD_DIR"
-    REF_PATH="$ROOT_PATH/$RD_DIR"
-    if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
-    then
-      as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $BACKUP_RD_START_MSG\"\015'"
-    fi
-
-    if mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null
-    then
       mc_saveoff
       backup
       backup_cksum
       mc_saveon
-    else echo "Ramdisk not mounted, nothing to do."
-    fi
+      ;;
+
+    ramdisk)
+      DATE=$(date "+%Y-%m-%d")
+      TIME=$(date "+%H-%M")
+      REF_BUDIR="$RD_DIR"
+      CS_PATH="$ROOT_BUPATH/chksum/$RD_DIR"
+      REF_PATH="$ROOT_PATH/$RD_DIR"
+      if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
+      then
+        as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $BACKUP_RD_START_MSG\"\015'"
+      fi
+
+      if mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null
+      then
+        mc_saveoff
+        backup
+        backup_cksum
+        mc_saveon
+      else echo "Ramdisk not mounted, nothing to do."
+      fi
+      ;;
+
+    *)
+    echo "Usage /etc/init.d/minecraft backup {worlds|ramdisk}"
+    exit 1
     ;;
+  esac
+  ;;
 
   *)
   echo "Usage: /etc/init.d/minecraft {start|stop|restart|status|worldbackup|rdbackup}"

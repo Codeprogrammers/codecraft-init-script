@@ -305,6 +305,45 @@ backup_cksum() {
 
 }
 
+#--------------------------+
+# rsync incremental backup |
+#--------------------------+
+# Experimental feature: rsync
+# flags in use:
+#     --recursive  - Goes though each folder to copy files
+#     --times      - Preserves time stamps on files
+#     --perms      - Preserves permissions on files
+#     --progress   - \
+#     --stats      - |> Allows user to see what is being copied in detail (will be removed when finished)
+#     --verbose    - /
+#     --dry-run    - Add this to test instead of copy files
+# Then we typical 'src' and 'dest' variables here. Copying from the ramdisk to the disk.
+
+backup_incr() {
+  if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null                           # Service running?
+  then
+    if mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null                                      # Ramdisk mounted?
+    then
+      if [ ! -d "$ROOT_PATH/$RD_DIR/worlds/$WORLD_NAME" ]                                           # World folders exist inside of ramdisk?
+      then echo "Nothing in $ROOT_PATH/$RD_DIR to backup!"                                        # If no, tell user there is nothing to copy
+      else echo "Copying changes to disk."                                                          # If yes, tell user we are copying stuff and continue
+        mc_saveoff                                                                                  # Turn off world saving while copying
+        cd $ROOT_PATH/$RD_DIR/worlds                                                                # cd into ramdisk path
+        for dir in *                                                                                # usual for loop to get stuff in the pwd
+        do
+          if [ -d "$dir" ] && [ -f "$dir/level.dat" ]                                               # Make sure we only copy a world and not something else
+          then echo "$dir being copied to disk"                                                   # Being verbose, we will say what we are copying
+            as_user "rsync --recursive --times --perms --progress --stats --verbose $ROOT_PATH/$RD_DIR/worlds/$dir $ROOT_PATH/$WORLD_DIR" # See comment preceding this function for explanation
+          else echo "Nothing copied from ramdisk."                                                  # Tell user we could not find worlds on the ramdisk
+          fi
+        done
+        mc_saveon                                                                                   # Turn world saving back on!
+      fi                                                                                            # Close if statement "world folder exist?"
+    else echo "Nothing to save, ramdisk not mounted at $ROOT_PATH/$RD_DIR"                          # Ramdisk not mounted message
+    fi                                                                                              # Close if statement "ramdisk mounted?"
+  else echo "$SERVICE not running, nothing to copy"                                                 # Service not running message
+  fi                                                                                                # Close if statement "Service running?"
+}
 
 #-------------------+
 # Mount the ramdisk |
@@ -470,46 +509,6 @@ mcrd_unload() {
   fi
 }
 
-#--------------------------+
-# rsync incremental backup |
-#--------------------------+
-# Experimental feature: rsync
-# flags in use:
-#     --recursive  - Goes though each folder to copy files
-#     --times      - Preserves time stamps on files
-#     --perms      - Preserves permissions on files
-#     --progress   - \
-#     --stats      - |> Allows user to see what is being copied in detail (will be removed when finished)
-#     --verbose    - /
-#     --dry-run    - Add this to test instead of copy files
-# Then we typical 'src' and 'dest' variables here. Copying from the ramdisk to the disk.
-
-rsync_bu() {
-  if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null                           # Service running?
-  then
-    if mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null                                      # Ramdisk mounted?
-    then
-      if [ ! -d "$ROOT_PATH/$RD_DIR/worlds/$WORLD_NAME" ]                                           # World folders exist inside of ramdisk?
-        then echo "Nothing in $ROOT_PATH/$RD_DIR to backup!"                                        # If no, tell user there is nothing to copy
-      else echo "Copying changes to disk."                                                          # If yes, tell user we are copying stuff and continue
-        mc_saveoff                                                                                  # Turn off world saving while copying
-		cd $ROOT_PATH/$RD_DIR/worlds                                                                # cd into ramdisk path
-        for dir in *                                                                                # usual for loop to get stuff in the pwd
-        do
-          if [ -d "$dir" ] && [ -f "$dir/level.dat" ]                                               # Make sure we only copy a world and not something else
-            then echo "$dir being copied to disk"                                                   # Being verbose, we will say what we are copying
-            as_user "rsync --recursive --times --perms --progress --stats --verbose $ROOT_PATH/$RD_DIR/worlds/$dir $ROOT_PATH/$WORLD_DIR" # See comment preceding this function for explanation
-          else echo "Nothing copied from ramdisk."                                                  # Tell user we could not find worlds on the ramdisk
-          fi
-        done
-        mc_saveon                                                                                   # Turn world saving back on!
-      fi                                                                                            # Close if statement "world folder exist?"
-    else echo "Nothing to save, ramdisk not mounted at $ROOT_PATH/$RD_DIR"                          # Ramdisk not mounted message
-    fi                                                                                              # Close if statement "ramdisk mounted?"
-  else echo "$SERVICE not running, nothing to copy"                                                 # Service not running message
-  fi                                                                                                # Close if statement "Service running?"
-}
-
 #---------------------+
 # Commandline parsing |
 #---------------------+
@@ -598,8 +597,8 @@ case "$1" in
     fi
     ;;
 
-  rsync_bu)
-    rsync_bu
+  backup_incr)
+    backup_incr
     ;;
 
   *)

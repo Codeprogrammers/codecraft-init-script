@@ -565,14 +565,34 @@ case "$1" in
       ;;
 
     *)
+    echo ""
     echo "Usage /etc/init.d/minecraft backup {worlds|ramdisk}"
+    echo ""
+    echo "Backup options:"
+    echo ""
+    echo "     worlds   - Backs up worlds to backup directory"
+    echo "     ramdisk  - Backs up entire ramdisk directory to backup directory"
+    echo ""
     exit 1
     ;;
   esac
   ;;
 
   *)
-  echo "Usage: /etc/init.d/minecraft {start|stop|restart|status|worldbackup|rdbackup}"
+  echo ""
+  echo "Usage: /etc/init.d/minecraft {start|stop|restart|status|backup [option]}"
+  echo ""
+  echo "Start    - Starts the Minecraft server"
+  echo "Stop     - Stops the Minecraft server (Unmounts ramdisk if enabled)"
+  echo "Restart  - Restarts the Minecraft server (Doesn't unmount ramdisk)"
+  echo "Status   - Displays status of the Minecraft server (Running or not)"
+  echo "Backup   - Backs up data to the backup directory"
+  echo ""
+  echo "Backup options:"
+  echo ""
+  echo "     worlds   - Backs up worlds to backup directory"
+  echo "     ramdisk  - Backs up entire ramdisk directory to backup directory"
+  echo ""
   exit 1
   ;;
 esac

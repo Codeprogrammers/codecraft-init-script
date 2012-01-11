@@ -62,7 +62,7 @@ RESTART_MSG="SERVER GOING FOR RESTART"
 
 ############################[ Script Start]#############################
 
-lockfile="/var/lock/subsys/minecraft"
+lockfile="/var/lock/minecraft"
 
 #Grabbing world name from $MC_PATH/server.properties
 WORLD_NAME=$(cat $ROOT_PATH/$SERVER_DIR/$BUILD/server.properties | fgrep 'level-name=' | sed -e s/.*level-name=//)

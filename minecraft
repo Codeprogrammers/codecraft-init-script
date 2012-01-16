@@ -1,6 +1,7 @@
 #!/bin/bash
 # /etc/init.d/minecraft
 # version 0.4.3 2012-01-11 (YYYY-MM-DD)
+# modified version 0.0.1 2012-01-11 (YYYY-MM-DD)
 
 ### BEGIN INIT INFO
 # Provides:   minecraft
@@ -32,6 +33,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#
+# Modified by J.C. Doll "Paswaru"
+# 0.0.1 - FIX: Changed javwc filter to look for \.[0-9][0-9]. Other regex was interfearing with worlds that ended in a number (i.e. WorldVer5).
 
 #Settings
 USERNAME="minecraft"
@@ -391,7 +395,7 @@ mcrd_load() {
       do
 
         if [ ! -d "$ROOT_PATH/$RD_DIR/worlds/$dir" ]                        # We are going to make sure it does not reside on the RAMDISK
-        then javwc=`expr match "$dir" '.*[0-9]'`                            # Expression to filter out the world backups (ignore something ending with a number)
+        then javwc=`expr match "$dir" '.*\.[0-9][0-9]'`                     # Expression to filter out the world backups (ignore something ending with a number)
 
           if [ -d "$dir" ] && [ -f "$ROOT_PATH/$WORLD_DIR/$dir/level.dat" ] && [ $javwc -eq 0 ]             # Make sure it is a directory, and that it has a level.dat file in it, and the it IS NOT a backup
           then

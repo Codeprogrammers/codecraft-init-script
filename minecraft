@@ -1,7 +1,7 @@
 #!/bin/bash
 # /etc/init.d/minecraft
 # version 0.4.3 2012-01-11 (YYYY-MM-DD)
-# modified version 0.2.0 2012-01-11 (YYYY-MM-DD)
+# modified version 0.3.0 2012-01-11 (YYYY-MM-DD)
 
 ### BEGIN INIT INFO
 # Provides:   minecraft
@@ -38,6 +38,7 @@
 # 0.0.1 - FIX: Changed javwc filter to look for \.[0-9][0-9]. Other regex was interfearing with worlds that ended in a number (i.e. WorldVer5).
 # 0.1.0 - ADD: Support for Ram Disk Type (ramfs, tmpfs).
 # 0.2.0 - ADD: Support for multiple instances of minecraft server under different usernames.
+# 0.3.0 - ADD: Support for bukkit world-container setting.
 
 #Settings
 USERNAME="minecraft"
@@ -73,6 +74,22 @@ lockfile="/var/lock/minecraft"
 
 #Grabbing world name from $MC_PATH/server.properties
 WORLD_NAME=$(cat $ROOT_PATH/$SERVER_DIR/$BUILD/server.properties | fgrep 'level-name=' | sed -e s/.*level-name=//)
+
+#Grabbing world container folder from $ROOT_PATH/$SERVER_DIR/$BUILD/bukkit.yml
+WORLD_CONTAINER="$ROOT_PATH/$SERVER_DIR/$BUILD"                         # Init $WORLD_CONTAINER
+if [ -f "$ROOT_PATH/$SERVER_DIR/$BUILD/bukkit.yml" ]
+  then 
+    if [[ $(cat $ROOT_PATH/$SERVER_DIR/$BUILD/bukkit.yml | fgrep 'world-container:' | sed -e 's/^[ \t]*//') != \#* ]]
+      then WORLD_CONTAINER=$(cat $ROOT_PATH/$SERVER_DIR/$BUILD/bukkit.yml | fgrep 'world-container:' | sed -e s/.*world-container:// | sed -e s/#.*// | sed -e 's/^[ \t]*//;s/[ \t]*$//')
+      else WORLD_CONTAINER="$ROOT_PATH/$SERVER_DIR/$BUILD"
+    fi
+  else WORLD_CONTAINER="$ROOT_PATH/$SERVER_DIR/$BUILD"
+fi
+
+#Check for Absolute Path
+if [[ $WORLD_CONTAINER != /* ]]
+  then WORLD_CONTAINER=$ROOT_PATH/$SERVER_DIR/$BUILD/$WORLD_CONTAINER
+fi
 
 #Run commands as the user defined in the $USERNAME variable
 ME=`whoami`
@@ -376,8 +393,8 @@ mcrd_unmount() {
 #---------------+
 #  Checks status of service; if service is not running, attempts to load ramdisk.
 #  Loads all worlds in $WORLD_DIR into ramdisk under "worlds" directory.
-#  Appends ".old" to symbolic links in $SERVER_DIR/$BUILD which point to $WORLD_DIR.
-#  Creates symbolic links to $RD_DIR/worlds in $SERVER_DIR/$BUILD.
+#  Appends ".old" to symbolic links in $WORLD_CONTAINER which point to $WORLD_DIR.
+#  Creates symbolic links to $RD_DIR/worlds in $WORLD_CONTAINER.
 #---------------+
 
 mcrd_load() {
@@ -405,10 +422,10 @@ mcrd_load() {
             cp -R $dir $ROOT_PATH/$RD_DIR/worlds                                                            # Copy the world from $ROOT_PATH/$WORLD_DIR to $ROOT_PATH/$RD_DIR
             chown -R $USERNAME:$GROUPNAME $ROOT_PATH/$RD_DIR/worlds
 
-            if [ -d "$ROOT_PATH/$SERVER_DIR/$BUILD/$dir" ]                                                  # Are there folders or symlinks already in $ROOT_PATH/$SERVER_DIR/$BUILD?
-            then as_user "mv $ROOT_PATH/$SERVER_DIR/$BUILD/$dir '$ROOT_PATH/$SERVER_DIR/$BUILD/$dir'.old"   # Rename them with the suffix ".old"
+            if [ -d "$WORLD_CONTAINER/$dir" ]                                                               # Are there folders or symlinks already in $WORLD_CONTAINER?
+            then as_user "mv $WORLD_CONTAINER/$dir '$WORLD_CONTAINER/$dir'.old"                             # Rename them with the suffix ".old"
             fi
-            as_user "ln -s $ROOT_PATH/$RD_DIR/worlds/$dir $ROOT_PATH/$SERVER_DIR/$BUILD/$dir"               # Setup the symlinks to the worlds on the RAMDISK
+            as_user "ln -s $ROOT_PATH/$RD_DIR/worlds/$dir $WORLD_CONTAINER/$dir"                            # Setup the symlinks to the worlds on the RAMDISK
 
           fi
         fi
@@ -423,8 +440,8 @@ mcrd_load() {
 #-----------------+
 #  Appends [date +"-%F-%H.%M"] to worlds in $WORLD_DIR
 #  Copies worlds from ramdisk back to $WORLD_DIR
-#  Deletes symbolic links in $SERVER_DIR/$BUILD which point to worlds on ramdisk.
-#  Removes '.old' from symbolic links in $SERVER_DIR/$BUILD which point to $WORLD_DIR.
+#  Deletes symbolic links in $WORLD_CONTAINER which point to worlds on ramdisk.
+#  Removes '.old' from symbolic links in $WORLD_CONTAINER which point to $WORLD_DIR.
 #-----------------+
 
 mcrd_unload() {
@@ -463,14 +480,14 @@ mcrd_unload() {
         done                                                                  # END for loop (directory inside $ROOT_PATH/$RD_DIR)
       fi
 
-      cd $ROOT_PATH/$SERVER_DIR/$BUILD
+      cd $WORLD_CONTAINER
 
       for dir in *
       do
         if [ -d "$dir".old ] && [ -f "$dir/level.dat" ]
         then
           rm -rf $dir                                                       # Remove the links pointing to the world directories on the ramdisk
-          as_user "cd $ROOT_PATH/$SERVER_DIR/$BUILD ; mv '$dir'.old $dir"   # Remove ".old" from the name of the links pointing to the world directories on the hard disk
+          as_user "cd $WORLD_CONTAINER ; mv '$dir'.old $dir"                # Remove ".old" from the name of the links pointing to the world directories on the hard disk
         fi
       done
 

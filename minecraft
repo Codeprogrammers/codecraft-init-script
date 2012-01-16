@@ -1,7 +1,7 @@
 #!/bin/bash
 # /etc/init.d/minecraft
 # version 0.4.3 2012-01-11 (YYYY-MM-DD)
-# modified version 0.0.1 2012-01-11 (YYYY-MM-DD)
+# modified version 0.1.0 2012-01-11 (YYYY-MM-DD)
 
 ### BEGIN INIT INFO
 # Provides:   minecraft
@@ -36,6 +36,7 @@
 #
 # Modified by J.C. Doll "Paswaru"
 # 0.0.1 - FIX: Changed javwc filter to look for \.[0-9][0-9]. Other regex was interfearing with worlds that ended in a number (i.e. WorldVer5).
+# 0.1.0 - ADD: Support for Ram Disk Type (ramfs, tmpfs).
 
 #Settings
 USERNAME="minecraft"
@@ -45,7 +46,8 @@ BUILD="b1597"
 SERVICE="craftbukkit.jar"
 INVOCATION="java -Xms512M -Xmx1024M -jar craftbukkit.jar"
 RAMDISK="true"
-RD_SIZE="128m"
+RD_TYPE="ramfs"    # Use tmpfs or ramfs
+RD_SIZE="128m"     # Max size of tmpfs or inital size of ramfs
 
 #File Paths/Names
 ROOT_PATH="/mnt/minecraft"
@@ -99,7 +101,7 @@ mc_start() {
 
     if [ $RAMDISK == 'true' ]
     then
-      if mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null
+      if mount -l -t $RD_TYPE | grep $ROOT_PATH/$RD_DIR > /dev/null
       then echo "Ramdisk Loaded"
         mcrd_load
       else echo "Loading Ramdisk"
@@ -117,7 +119,7 @@ mc_start() {
 
       if [ $RAMDISK == 'true' ]
       then
-        if mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null
+        if mount -l -t $RD_TYPE | grep $ROOT_PATH/$RD_DIR > /dev/null
         then echo "Unloading Ramdisk."
           mcrd_unload
           mcrd_unmount
@@ -324,19 +326,19 @@ backup_cksum() {
 # Will probably add later the ability to make $ROOT_PATH/$RD_DIR if it doesn't exist
 
 mcrd_mount() {
-  if mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null
+  if mount -l -t $RD_TYPE | grep $ROOT_PATH/$RD_DIR > /dev/null
   then echo "Ramdisk already mounted"
   else
 
     if [ ! -d $ROOT_PATH/$RD_DIR ]
     then echo "Aborting service startup! $ROOT_PATH/$RD_DIR does not exist!" ; exit 1
     else echo "Mounting ramdisk at $ROOT_PATH/$RD_DIR"
-      mount -t tmpfs -o size=$RD_SIZE tmpfs $ROOT_PATH/$RD_DIR
+      mount -t $RD_TYPE -o size=$RD_SIZE $RD_TYPE $ROOT_PATH/$RD_DIR
       sleep 3
       chown $USERNAME:$GROUPNAME $ROOT_PATH/$RD_DIR   # Make sure that $USERNAME and members of $GROUPNAME can access the data in the ramdisk
     fi
 
-    if mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null
+    if mount -l -t $RD_TYPE | grep $ROOT_PATH/$RD_DIR > /dev/null
     then echo "Ramdisk mounted at $ROOT_PATH/$RD_DIR"
     else echo "Aborting service startup! Could not mount Ramdisk!" ; exit 1
     fi
@@ -352,10 +354,10 @@ mcrd_mount() {
 #----------------------+
 
 mcrd_unmount() {
-  if mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null
+  if mount -l -t $RD_TYPE | grep $ROOT_PATH/$RD_DIR > /dev/null
   then echo "Ramdisk mounted at $ROOT_PATH/$RD_DIR.... unmounting"
 
-    while mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null
+    while mount -l -t $RD_TYPE | grep $ROOT_PATH/$RD_DIR > /dev/null
     do
       sleep 2
       umount $ROOT_PATH/$RD_DIR
@@ -425,7 +427,7 @@ mcrd_load() {
 #-----------------+
 
 mcrd_unload() {
-  if mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null                  # Check if the Ramdisk is mounted
+  if mount -l -t $RD_TYPE | grep $ROOT_PATH/$RD_DIR > /dev/null                  # Check if the Ramdisk is mounted
   then
 
     if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null   # Is service running?
@@ -531,7 +533,7 @@ case "$1" in
       TIME=$(date "+%H-%M")
       REF_BUDIR="$WORLD_DIR"
       CS_PATH="$ROOT_BUPATH/chksum/$WORLD_DIR"
-      if [ $RAMDISK == 'true' ] && mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null
+      if [ $RAMDISK == 'true' ] && mount -l -t $RD_TYPE | grep $ROOT_PATH/$RD_DIR > /dev/null
       then REF_PATH="$ROOT_PATH/$RD_DIR/worlds"
       else REF_PATH="$ROOT_PATH/$WORLD_DIR"
       fi
@@ -558,7 +560,7 @@ case "$1" in
         as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $BACKUP_RD_START_MSG\"\015'"
       fi
 
-      if mount -l -t tmpfs | grep $ROOT_PATH/$RD_DIR > /dev/null
+      if mount -l -t $RD_TYPE | grep $ROOT_PATH/$RD_DIR > /dev/null
       then
         mc_saveoff
         backup

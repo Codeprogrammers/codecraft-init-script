@@ -1,6 +1,6 @@
 #!/bin/bash
 # /etc/init.d/minecraft
-# version 0.4.1 2012-01-06 (YYYY-MM-DD)
+# version 0.4.3 2012-01-06 (YYYY-MM-DD)
 
 ### BEGIN INIT INFO
 # Provides:   minecraft
@@ -34,9 +34,9 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #Settings
-USERNAME="daniel"
-GROUPNAME="daniel"
-SCREEN_NAME="codecraft"
+USERNAME="minecraft"
+GROUPNAME="minecraft"
+SCREEN_NAME="minecraft"
 BUILD="b1597"
 SERVICE="craftbukkit.jar"
 INVOCATION="java -Xms512M -Xmx1024M -jar craftbukkit.jar"
@@ -44,7 +44,7 @@ RAMDISK="true"
 RD_SIZE="128m"
 
 #File Paths/Names
-ROOT_PATH="/mnt/codecraft"
+ROOT_PATH="/mnt/minecraft"
 WORLD_DIR="worlds"
 SERVER_DIR="servers"
 RD_DIR="ramdisk"

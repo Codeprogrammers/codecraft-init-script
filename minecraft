@@ -74,6 +74,7 @@ RESTART_MSG="SERVER GOING FOR RESTART"
 
 ############################[ Script Start]#############################
 
+# TODO: This shouldn't be hardcoded but instead use the name of the script, in cases where you have two MC servers on the same box.
 lockfile="/var/lock/minecraft"
 
 #Grabbing world name from $MC_PATH/server.properties

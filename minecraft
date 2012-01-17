@@ -1,7 +1,7 @@
 #!/bin/bash
 # /etc/init.d/minecraft
 # version 0.4.3 2012-01-11 (YYYY-MM-DD)
-# modified version 0.4.0 2012-01-11 (YYYY-MM-DD)
+# modified version 0.5.0 2012-01-11 (YYYY-MM-DD)
 
 ### BEGIN INIT INFO
 # Provides:   minecraft
@@ -41,6 +41,7 @@
 # 0.3.0 - ADD: Support for bukkit world-container setting.
 # 0.4.0 - ADD: Support for physical disk worlds to have thier own directory. (Ram Disk worlds need to be moved to $RD_WORLD_DIR).
 #              Moved check for $WORLD_NAME to mc_start and checks both $WORLD_DIR and $RD_WORLD_DIR.
+# 0.5.0 - ADD: Added support to auto create and remove $ROOT_PATH/$RD_DIR.
 
 #Settings
 USERNAME="minecraft"
@@ -405,7 +406,6 @@ mc_link() {
 }
 
 
-
 #-------------------+
 # Mount the ramdisk |
 #-------------------+
@@ -416,13 +416,15 @@ mc_link() {
 #  If ramdisk fails to mount, aborts the script.
 #-------------------+
 
-# Will probably add later the ability to make $ROOT_PATH/$RD_DIR if it doesn't exist
-
 mcrd_mount() {
   if mount -l -t $RD_TYPE | grep $ROOT_PATH/$RD_DIR > /dev/null
   then echo "Ramdisk already mounted"
   else
 
+    if [ ! -d $ROOT_PATH/$RD_DIR ]
+      then as_user "mkdir $ROOT_PATH/$RD_DIR"
+    fi
+    
     if [ ! -d $ROOT_PATH/$RD_DIR ]
     then echo "Aborting service startup! $ROOT_PATH/$RD_DIR does not exist!" ; exit 1
     else echo "Mounting ramdisk at $ROOT_PATH/$RD_DIR"
@@ -456,6 +458,10 @@ mcrd_unmount() {
       umount $ROOT_PATH/$RD_DIR
       sleep 1
     done
+    
+    if [ ! "$(ls -A $ROOT_PATH/$RD_DIR)" ]  #  If $ROOT_PATH/$RD_DIR is empty remove it.
+      then as_user "rmdir $ROOT_PATH/$RD_DIR"
+    fi
     echo "Ramdisk unmounted"
 
   else echo "Ramdisk was not mounted at $ROOT_PATH/$RD_DIR"

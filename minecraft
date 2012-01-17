@@ -42,7 +42,7 @@
 # 0.4.0 - ADD: Support for physical disk worlds to have thier own directory. (Ram Disk worlds need to be moved to $RD_WORLD_DIR).
 #              Moved check for $WORLD_NAME to mc_start and checks both $WORLD_DIR and $RD_WORLD_DIR.
 # 0.5.0 - ADD: Added support to auto create and remove $ROOT_PATH/$RD_DIR.
-# 0.5.1 - FIX: Made lockfile is now based on script name, fix for multiple instances of minecraft server.
+# 0.5.1 - FIX: Made lockfile based on script name, fix for multiple instances of minecraft server.
 
 #Settings
 USERNAME="minecraft"

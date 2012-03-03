@@ -45,12 +45,14 @@
 # 0.5.1 - FIX: Made lockfile based on script name, fix for multiple instances of minecraft server.
 # 0.6.0 - ADD: Moved Settings to a configuration file in /etc/
 # 0.6.1 - FIX: Removed Windows EOF/EOL and adjusted case of $scriptname
+# 0.6.2 - FIX: Issuse with reading the scriptname. Was returning the Symlink name and not the real name of the file.
+#              This problem was exposed by the new configuration file.
 
 #Settings are in /etc/<SCRIPTNAME>.conf
 
 ############################[ Script Start]#############################
 
-scriptname=$(basename $0)
+scriptname="$(basename "$(test -L "$0" && readlink "$0" || echo "$0")")"
 lockfile="/var/lock/"$scriptname
 
 echo "Reading settings from /etc/$scriptname.conf"

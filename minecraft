@@ -43,40 +43,28 @@
 #              Moved check for $WORLD_NAME to mc_start and checks both $WORLD_DIR and $RD_WORLD_DIR.
 # 0.5.0 - ADD: Added support to auto create and remove $ROOT_PATH/$RD_DIR.
 # 0.5.1 - FIX: Made lockfile based on script name, fix for multiple instances of minecraft server.
+# 0.6.0 - ADD: Moved Settings to a configuration file in /etc/
 
-#Settings
-USERNAME="minecraft"
-GROUPNAME="minecraft"
-SCREEN_NAME="minecraft"
-BUILD="b1597"
-SERVICE="craftbukkit.jar"
-INVOCATION="java -Xms512M -Xmx1024M -jar craftbukkit.jar"
-RAMDISK="true"
-RD_TYPE="ramfs"    # Use tmpfs or ramfs
-RD_SIZE="128m"     # Max size of tmpfs or inital size of ramfs
-
-#File Paths/Names
-ROOT_PATH="/mnt/minecraft"
-WORLD_DIR="worlds"
-RD_WORLD_DIR="ramworlds"
-SERVER_DIR="servers"
-RD_DIR="ramdisk"
-ROOT_BUPATH="$ROOT_PATH/archives"
-
-#Messages (sent to minecraft server console with "say" command)
-SAVE_OFF_MSG="Server going readonly..."
-SAVE_ON_MSG="Server going read-write..."
-BACKUP_START_MSG="SERVER BACKUP STARTING"
-BACKUP_RD_START_MSG="RAMDISK BACKUP STARTING"
-BACKUP_DONE_MSG="SERVER BACKUP COMPLETE"
-BACKUP_FAIL_MSG="SERVER BACKUP FAILED"
-STOP_MSG="SERVER SHUTTING DOWN IN 15 SECONDS"
-RESTART_MSG="SERVER GOING FOR RESTART"
+#Settings are in /etc/<SCRIPTNAME>.conf
 
 ############################[ Script Start]#############################
 
 scriptname=$(basename $0)
 lockfile="/var/lock/"$scriptname
+
+echo "Reading settings from /etc/$SCRIPTNAME.conf"
+configfile="/etc/$SCRIPTNAME.conf"
+configfile_secured="/tmp/$SCRIPTNAME.conf"
+
+# check if the file contains something we don't want
+if egrep -q -v '^#|^[^ ]*=[^;]*' "$configfile"; then
+  echo "The configuration file is not clean! Cleaning it."
+  # filter the original to a new file
+  egrep '^#|^[^ ]*=[^;&]*'  "$configfile" > "$configfile_secured"
+  configfile="$configfile_secured"
+fi
+
+source $configfile
 
 #Grabbing world name from $MC_PATH/server.properties
 WORLD_NAME=$(cat $ROOT_PATH/$SERVER_DIR/$BUILD/server.properties | fgrep 'level-name=' | sed -e s/.*level-name=//)

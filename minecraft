@@ -44,6 +44,7 @@
 # 0.5.0 - ADD: Added support to auto create and remove $ROOT_PATH/$RD_DIR.
 # 0.5.1 - FIX: Made lockfile based on script name, fix for multiple instances of minecraft server.
 # 0.6.0 - ADD: Moved Settings to a configuration file in /etc/
+# 0.6.1 - FIX: Removed Windows EOF/EOL and adjusted case of $scriptname
 
 #Settings are in /etc/<SCRIPTNAME>.conf
 
@@ -52,14 +53,14 @@
 scriptname=$(basename $0)
 lockfile="/var/lock/"$scriptname
 
-echo "Reading settings from /etc/$SCRIPTNAME.conf"
-configfile="/etc/$SCRIPTNAME.conf"
-configfile_secured="/tmp/$SCRIPTNAME.conf"
+echo "Reading settings from /etc/$scriptname.conf"
+configfile="/etc/$scriptname.conf"
+configfile_secured="/tmp/$scriptname.conf"
 
-# check if the file contains something we don't want
+#Check if the file contains something other than settings (i.e. code)
 if egrep -q -v '^#|^[^ ]*=[^;]*' "$configfile"; then
   echo "The configuration file is not clean! Cleaning it."
-  # filter the original to a new file
+  #Filter the original to a new file
   egrep '^#|^[^ ]*=[^;&]*'  "$configfile" > "$configfile_secured"
   configfile="$configfile_secured"
 fi

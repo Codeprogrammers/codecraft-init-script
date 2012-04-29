@@ -432,10 +432,10 @@ mcrd_unmount() {
   if ps -U $USERNAME x | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null   # Is service running?
   then echo "Can't unmount ramdisk, $SERVICE is still running!"
   
-  elif [ $mcrd_status == 1 ]
+  elif [ "$mcrd_status" = "1" ]
   then echo "Can't unmount ramdisk, ramdisk not unloaded!"
   
-  elif [ $mcrd_status == 0 ]
+  elif [ "$mcrd_status" = "0" ]
   then
   
     if mount -l -t $RD_TYPE | grep $ROOT_PATH/$RD_DIR > /dev/null
@@ -522,7 +522,7 @@ mcrd_unload() {
     if ps -U $USERNAME x | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null   # Is service running?
     then echo "Can't unload ramdisk, $SERVICE is still running!"
       
-      mcrd_status=1  # Could not unload ramdisk, notify other functions of failure
+      mcrd_status="1"  # Could not unload ramdisk, notify other functions of failure
     
     else
 
@@ -565,7 +565,7 @@ mcrd_unload() {
         fi
       done
 
-      mcrd_status=0  # Ramdisk successfully unloaded, notify other functions of success
+      mcrd_status="0"  # Ramdisk successfully unloaded, notify other functions of success
 
     fi
 

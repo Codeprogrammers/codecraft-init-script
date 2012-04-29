@@ -242,10 +242,10 @@ backup() {
   then
     TIME="$TIME"_`date "+%S"`                             # Appened the current seconds time to $bu_time
     as_user "mkdir $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
-    as_user "cp -a $REF_PATH/* $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
+    as_user "cp -aL $REF_PATH/* $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
   else
     as_user "mkdir $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
-    as_user "cp -a $REF_PATH/* $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
+    as_user "cp -aL $REF_PATH/* $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
   fi
 
   echo "Backup finished"
@@ -299,10 +299,10 @@ backup_cksum() {
     as_user "mkdir $CS_PATH/reference ; mkdir $CS_PATH/backup"
   fi
 
-  as_user "cd $REF_PATH ; tar -cf checksum.tar *"
+  as_user "cd $REF_PATH ; tar -chf checksum.tar *"
   as_user "mv $REF_PATH/checksum.tar $CS_PATH/reference"
 
-  as_user "cd $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME ; tar -cf checksum.tar *"
+  as_user "cd $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME ; tar -chf checksum.tar *"
   as_user "mv $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME/checksum.tar $CS_PATH/backup"
 
   cd $CS_PATH
@@ -625,11 +625,11 @@ case "$1" in
     worlds)
       DATE=$(date "+%Y-%m-%d")
       TIME=$(date "+%H-%M")
-      REF_BUDIR="$RD_WORLD_DIR"
+      REF_BUDIR="$WORLD_DIR"
       CS_PATH="$ROOT_BUPATH/chksum/$RD_WORLD_DIR"
       if [ $RAMDISK == 'true' ] && mount -l -t $RD_TYPE | grep $ROOT_PATH/$RD_DIR > /dev/null
       then REF_PATH="$ROOT_PATH/$RD_DIR/worlds"
-      else REF_PATH="$ROOT_PATH/$RD_WORLD_DIR"
+      else REF_PATH="$ROOT_PATH/$WORLD_DIR"
       fi
 
       if ps -U $USERNAME x | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null

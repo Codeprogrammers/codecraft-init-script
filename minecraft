@@ -428,22 +428,36 @@ mcrd_mount() {
 #----------------------+
 
 mcrd_unmount() {
-  if mount -l -t $RD_TYPE | grep $ROOT_PATH/$RD_DIR > /dev/null
-  then echo "Ramdisk mounted at $ROOT_PATH/$RD_DIR.... unmounting"
 
-    while mount -l -t $RD_TYPE | grep $ROOT_PATH/$RD_DIR > /dev/null
-    do
-      sleep 2
-      umount $ROOT_PATH/$RD_DIR
-      sleep 1
-    done
-    
-    if [ ! "$(ls -A $ROOT_PATH/$RD_DIR)" ]  #  If $ROOT_PATH/$RD_DIR is empty remove it.
-      then as_user "rmdir $ROOT_PATH/$RD_DIR"
+  if ps -U $USERNAME x | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null   # Is service running?
+  then echo "Can't unmount ramdisk, $SERVICE is still running!"
+  
+  elif [ $mcrd_status == 1 ]
+  then echo "Can't unmount ramdisk, ramdisk not unloaded!"
+  
+  elif [ $mcrd_status == 0 ]
+  then
+  
+    if mount -l -t $RD_TYPE | grep $ROOT_PATH/$RD_DIR > /dev/null
+    then echo "Ramdisk mounted at $ROOT_PATH/$RD_DIR.... unmounting"
+
+      while mount -l -t $RD_TYPE | grep $ROOT_PATH/$RD_DIR > /dev/null
+      do
+        sleep 2
+        umount $ROOT_PATH/$RD_DIR
+        sleep 1
+      done
+      
+      if [ ! "$(ls -A $ROOT_PATH/$RD_DIR)" ]  #  If $ROOT_PATH/$RD_DIR is empty remove it.
+        then as_user "rmdir $ROOT_PATH/$RD_DIR"
+      fi
+      echo "Ramdisk unmounted"
+
+    else echo "Ramdisk was not mounted at $ROOT_PATH/$RD_DIR"
     fi
-    echo "Ramdisk unmounted"
-
-  else echo "Ramdisk was not mounted at $ROOT_PATH/$RD_DIR"
+  
+  else echo "Could not unmount ramdisk"
+  
   fi
 }
 
@@ -507,6 +521,9 @@ mcrd_unload() {
 
     if ps -U $USERNAME x | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null   # Is service running?
     then echo "Can't unload ramdisk, $SERVICE is still running!"
+      
+      mcrd_status=1  # Could not unload ramdisk, notify other functions of failure
+    
     else
 
       if [ ! -d "$ROOT_PATH/$RD_DIR/worlds/$WORLD_NAME" ]                     # Check if $WORLD_NAME (whatevere it was named in server.properties) exists in $ROOT_PATH/$RD_DIR
@@ -547,6 +564,8 @@ mcrd_unload() {
           as_user "cd $WORLD_CONTAINER ; mv '$dir'.old $dir"                # Remove ".old" from the name of the links pointing to the world directories on the hard disk
         fi
       done
+
+      mcrd_status=0  # Ramdisk successfully unloaded, notify other functions of success
 
     fi
 

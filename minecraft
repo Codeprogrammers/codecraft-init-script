@@ -1,7 +1,6 @@
 #!/bin/bash
 # /etc/init.d/minecraft
 # version 0.4.3 2012-01-11 (YYYY-MM-DD)
-# modified version 0.5.1 2012-01-11 (YYYY-MM-DD)
 
 ### BEGIN INIT INFO
 # Provides:   minecraft
@@ -34,16 +33,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-# Modified by J.C. Doll "Paswaru"
-# 0.0.1 - FIX: Changed javwc filter to look for \.[0-9][0-9]. Other regex was interfearing with worlds that ended in a number (i.e. WorldVer5).
-# 0.1.0 - ADD: Support for Ram Disk Type (ramfs, tmpfs).
-# 0.2.0 - ADD: Support for multiple instances of minecraft server under different usernames.
-# 0.3.0 - ADD: Support for bukkit world-container setting.
-# 0.4.0 - ADD: Support for physical disk worlds to have thier own directory. (Ram Disk worlds need to be moved to $RD_WORLD_DIR).
-#              Moved check for $WORLD_NAME to mc_start and checks both $WORLD_DIR and $RD_WORLD_DIR.
-# 0.5.0 - ADD: Added support to auto create and remove $ROOT_PATH/$RD_DIR.
-# 0.5.1 - FIX: Made lockfile based on script name, fix for multiple instances of minecraft server.
-# 0.6.0 - ADD: Moved Settings to a configuration file in /etc/
 
 #Settings are in /etc/<SCRIPTNAME>.conf
 

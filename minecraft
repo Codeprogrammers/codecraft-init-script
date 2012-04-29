@@ -39,7 +39,7 @@
 ############################[ Script Start]#############################
 
 SCRIPTNAME="$(basename "$(test -L "$0" && readlink "$0" || echo "$0")")"
-lockfile="/var/lock/"$scriptname
+lockfile="/var/lock/"$SCRIPTNAME
 
 echo "Reading settings from /etc/$SCRIPTNAME.conf"
 configfile="/etc/$SCRIPTNAME.conf"

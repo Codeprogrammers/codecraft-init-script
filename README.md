@@ -136,59 +136,49 @@ Settings
 There are many variables in this script which you may modify to suite your
 operating environment.
 
-<table>
-  <tr>
-    <td>**USERNAME**</td>
-    <td>This is the username which the Minecraft server will run under</td>
-  </tr>
+**USERNAME**
 
-  <tr>
-    <td>**GROUPNAME**</td>
-    <td>This variable should be set to the group which will have access to all files related to your Minecraft server.</td>
-  </tr> 
+* This is the username which the Minecraft server will run under
 
-  <tr>
-    <td>**SCREEN_NAME**</td>
-    <td>
-      The script starts the service in a screen session for easy remote accessibility. <br /> 
-      This variable sets the name of the session.
-    </td>
-  </tr> 
+**GROUPNAME**
+
+* This variable should be set to the group which will have access to all files related to your Minecraft server.
+
+**SCREEN_NAME**
+
+* The script starts the service in a screen session for easy remote accessibility. <br />This variable sets the name of the session.
   
-  <tr>
-    <td>**BUILD**</td>
-    <td>
-      This should be set to the build number or version of the server you're running (like b1337 for bukkit, or v1.8.1 for vanilla). <br />
-      This is only used when looking for the directory your server runs under (for example, our server has directories named "b1240" and "b1337", and since we run off of b1337 as it's the most recent, we set this variable to b1337).
-    </td>
-  </tr> 
+**BUILD**
 
-  <tr>
-    <td>**SERVICE**</td>
-    <td>
-      This should be set to the name of the .jar file which starts your server (craftbukkit.jar for bukkit, minecraft.jar for vanilla). <br />
-      This must be set to the name of the .jar file used in the invocation since the service will show up in top or gnome-system-monitor with the name of the .jar file used in the invocation.
-    </td>
-  </tr>
-  
-  <tr>
-    <td>**INVOCATION**</td>
-    <td>
-      This should be set to the command-line statements used to start your server. <br />
-      For example: `java -Xmn256M -Xms512M -Xmx1024M -jar craftbukkit.jar`
-    </td>
-  </tr>
-  
-  <tr>
-    <td>**RAMDISK**</td>
-    <td>
-      This should be set to "true" if you want your worlds to be loaded into a ramdisk. <br />
-      It's highly recommended that you set up automatic backups while using this feature. <br />
-      For our server, we simply set up a cron job that runs `/etc/init.d/minecraft worldbackup` every hour.
-    </td>
-  </tr>
+* This should be set to the build number or version of the server you're running (like b1337 for bukkit, or v1.8.1 for vanilla). <br />This is only used when looking for the directory your server runs under (for example, our server has directories named "b1240" and "b1337", and since we run off of b1337 as it's the most recent, we set this variable to b1337).
 
-</table>
+**SERVICE**
+
+* This should be set to the name of the .jar file which starts your server (craftbukkit.jar for bukkit, minecraft.jar for vanilla). <br />This must be set to the name of the .jar file used in the invocation since the service will show up in top or gnome-system-monitor with the name of the .jar file used in the invocation.
+
+**INVOCATION**
+
+* This should be set to the command-line statements used to start your server. <br />For example: `java -Xmn256M -Xms512M -Xmx1024M -jar craftbukkit.jar`
+
+**RAMDISK**
+
+* This should be set to "true" if you want your worlds to be loaded into a ramdisk. <br />It's highly recommended that you set up automatic backups while using this feature. <br />For our server, we simply set up a cron job that runs `/etc/init.d/minecraft worldbackup` every hour.
+
+**RD_SIZE**
+
+* This is the size you want the ramdisk to be. "m" is megabytes, "g" is kilobytes. Make sure the ramdisk is big enough to hold your worlds while still leaving enough RAM for the server itself (including core system processes, which should be given at least 256Mb in most situations)
+
+**Example:**
+
+    USERNAME="minecraft"
+    GROUPNAME="CodeProAdmins"
+    SCREEN_NAME="codecraft"
+    BUILD="b1597"
+    SERVICE="craftbukkit.jar"
+    INVOCATION="java -Xms512M -Xmx1024M -jar craftbukkit.jar"
+    RAMDISK="true"
+    RD_SIZE="128m"
+
 
 **Note:** This script will implement automatic backups in the future as a toggleable feature (similar to the ramdisk feature).
 

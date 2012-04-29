@@ -27,8 +27,6 @@ These scripts are still in development and should be considered beta quality.
 
 It is **highly recommended** that you test this script out yourself in a controlled environment before using it with your production server.
 
-<br />
-
 Setup
 =====
 
@@ -37,32 +35,30 @@ This script is designed to be as easy to use, and as useful as possible. However
 Step 1: *Directory Setup*
 -------------------------
 
-This script requires a specific directory tree to be set up. We'll be telling the script the name of the directories in this tree in Step 2.
+This script expects certain folders to be placed in certain directories. We'll be telling the script the name of these folders in Step 2, but we need to create them first.
+Any variable ending in `PATH` should contain a full directory path (i.e. anything that starts with "/", for example: `/mnt/codecraft`).
 
-_**Note:**_
-Any variable ending in **PATH** should hold a full directory path (i.e. starts with a **/**, for example: **/mnt/codecraft** ).
-The exception to this is the **ROOT_BUPATH** variable which can also begin with the **ROOT_PATH** variable instead of a **/**
-Any variable ending in **DIR** should contain the _name of the folder only_.
+* The exception to this is the `ROOT_BUPATH` variable which can also begin with the `ROOT_PATH` variable instead of a "/"
 
-1. Make the root directory for your server. Put this in the **$ROOT_PATH** variable.
+Any variable ending in `DIR` should contain the **name of the folder only**.
 
-2. Make a folder for your server configurations inside of the root directory. Put this in the **SERVER_DIR** variable.
+1. Make the root directory for your server. This will be used by the `$ROOT_PATH` variable.
 
-3. Make a folder for craftbukkit.jar/minecraft_server.jar inside of the **SERVER_DIR** directory. Name this with the build or version number of the .jar you're using. Put this in the **BUILD** variable.
+2. Make a folder for your server versions/configuraitons inside of the root directory. This will be used by the `SERVER_DIR` variable.
 
-4. Make a folder for your worlds. Put this in the **WORLD_DIR** variable.
+3. Make a folder for your server's core files inside of the `SERVER_DIR` directory. This should be given the same name as the build or version number of the server software you're using. This will be used by the `BUILD` variable.
 
-5. Make a folder for the ramdisk. Put this in the **RD_DIR** variable.
+4. Make a folder for your worlds. This will be used by the `WORLD_DIR` variable.
 
-6. Make a folder for your backups. Put this in the **ROOT_BUPATH** variable. The script will make folders inside of this one later to keep your backups organized.
+5. Make a folder for the ramdisk. This will be used by the `RD_DIR` variable.
+
+6. Make a folder for your backups. This will be used by the `ROOT_BUPATH` variable.
+ * The script will make folders inside of this one later to keep your backups organized.
 
 **Example:**
-
-    BUILD="b1597"
-
     ROOT_PATH="/mnt/codecraft"
-    SERVER_DIR="servers"
     WORLD_DIR="worlds"
+    SERVER_DIR="servers"
     RD_DIR="ramdisk"
     ROOT_BUPATH="$ROOT_PATH/archives"
 
@@ -71,25 +67,24 @@ Step 2:  *Installation and Configuration*
 
 First things first. If you haven't already, go grab the latest version of the script from the Github repo. You can find it in the downloads section.
 
-1. Download either the vanilla minecraft server software or bukkit and place it in **$ROOT_PATH/$SERVER_DIR/$BUILD**
+1. Download either the vanilla minecraft server software or bukkit and place it in `$ROOT_PATH/$SERVER_DIR/$BUILD`
 
-2. Place your worlds into the **$WORLD_DIR** directory and place symbolic links in **$ROOT_PATH/$SERVER_DIR/$BUILD** which point to the worlds in **$ROOT_PATH/$WORLD_DIR**. To do this, open up a terminal and type the following (replacing the variables with your chosen directory paths):
+2. Place your worlds into the `$WORLD_DIR` directory and place symbolic links in `$ROOT_PATH/$SERVER_DIR/$BUILD` which point to the worlds in `$ROOT_PATH/$WORLD_DIR`
+ * To do this, open up a terminal and type the following (replacing the variables with your chosen directory paths):
 
-    ```
-    cd $ROOT_PATH/$SERVER_DIR/$BUILD
-    ln -s $ROOT_PATH/$WORLD_DIR/[world_name_here] [world_name_here]
-    ```
+      cd $ROOT_PATH/$SERVER_DIR/$BUILD
+      ln -s $ROOT_PATH/$WORLD_DIR/[world_name_here] [world_name_here]
 
  * Repeat the last command for every world on your server.
- * _**Note:**_ If you don't currently have any worlds, you'll need to run the service first (bukkit/minecraft will automatically create them), and then move the worlds into the **$WORLD_DIR** directory and issue the afformentioned commands.
+ * **Note:** If you don't currently have any worlds, you'll need to run the service first (bukkit/minecraft will automatically create them), and then move the worlds into the `$WORLD_DIR` directory and issue the afformentioned commands.
 
 3. Extract the script from the tarball and change the settings and file paths/directory names as you see fit. More information on configuraiton can be found in the Notes section.
 
-4. Place the script in your /etc/init.d folder and make sure the script is executable with `chmod +x minecraft`.
+4. Place the script in your /etc/init.d folder and make sure the script is executable (just `chmod +x minecraft` and that should do it).
 
-5. Configure the script to start Minecraft/Bukkit on startup and stop it on shutdown:
- * _**RHEL / CentOS:**_ Run in terminal `chkconfig --add minecraft`
- * _**Debian / Ubuntu:**_ Run in terminal `update-rc.d -n minecraft defaults`
+5. Configure the script to start Minecraft/Bukkit on startup and stop it on shutdown.
+ * __*RHEL / CentOS:*__ Run in terminal `chkconfig --add minecraft`
+ * __*Debian / Ubuntu:*__ Run in terminal `update-rc.d -n minecraft defaults`
 
 Step 3:  *Start the Service*
 ----------------------------
@@ -97,8 +92,8 @@ Step 3:  *Start the Service*
 As root, run `service minecraft start`
 
 <br />
-Congratulations, you now have Minecraft/Bukkit running as a service on your server!
------------------------------------------------------------------------------------
+###Congratulations, you now have Minecraft/Bukkit running as a service on your server!
+
 As always, make sure your firewall, plugins, and bukkit/vanilla minecraft are configured properly. Though this script may still be in development, if your server fails to start properly or it starts and you can't connect to it (especially the latter), it's likely due to an issue with your configuration, so check that first before reporting bugs.
 
 <br />
@@ -141,52 +136,61 @@ Settings
 There are many variables in this script which you may modify to suite your
 operating environment.
 
-<br />
+<table>
+  <tr>
+    <td>**USERNAME**</td>
+    <td>This is the username which the Minecraft server will run under</td>
+  </tr>
 
-**USERNAME**
+  <tr>
+    <td>**GROUPNAME**</td>
+    <td>This variable should be set to the group which will have access to all files related to your Minecraft server.</td>
+  </tr> 
 
-* This is the username which the Minecraft server will run under
-
-**GROUPNAME**
-
-* This variable should be set to the group which will have access to all files related to your Minecraft server.
-
-**SCREEN_NAME**
-
-* The script starts the service in a screen session for easy remote accessibility. <br />This variable sets the name of the session.
+  <tr>
+    <td>**SCREEN_NAME**</td>
+    <td>
+      The script starts the service in a screen session for easy remote accessibility. <br /> 
+      This variable sets the name of the session.
+    </td>
+  </tr> 
   
-**BUILD**
+  <tr>
+    <td>**BUILD**</td>
+    <td>
+      This should be set to the build number or version of the server you're running (like b1337 for bukkit, or v1.8.1 for vanilla). <br />
+      This is only used when looking for the directory your server runs under (for example, our server has directories named "b1240" and "b1337", and since we run off of b1337 as it's the most recent, we set this variable to b1337).
+    </td>
+  </tr> 
 
-* This should be set to the build number or version of the server you're running (like b1337 for bukkit, or v1.8.1 for vanilla). <br />This is only used when looking for the directory your server runs under (for example, our server has directories named "b1240" and "b1337", and since we run off of b1337 as it's the most recent, we set this variable to b1337).
+  <tr>
+    <td>**SERVICE**</td>
+    <td>
+      This should be set to the name of the .jar file which starts your server (craftbukkit.jar for bukkit, minecraft.jar for vanilla). <br />
+      This must be set to the name of the .jar file used in the invocation since the service will show up in top or gnome-system-monitor with the name of the .jar file used in the invocation.
+    </td>
+  </tr>
+  
+  <tr>
+    <td>**INVOCATION**</td>
+    <td>
+      This should be set to the command-line statements used to start your server. <br />
+      For example: `java -Xmn256M -Xms512M -Xmx1024M -jar craftbukkit.jar`
+    </td>
+  </tr>
+  
+  <tr>
+    <td>**RAMDISK**</td>
+    <td>
+      This should be set to "true" if you want your worlds to be loaded into a ramdisk. <br />
+      It's highly recommended that you set up automatic backups while using this feature. <br />
+      For our server, we simply set up a cron job that runs `/etc/init.d/minecraft worldbackup` every hour.
+    </td>
+  </tr>
 
-**SERVICE**
+</table>
 
-* This should be set to the name of the .jar file which starts your server (craftbukkit.jar for bukkit, minecraft.jar for vanilla). <br />This must be set to the name of the .jar file used in the invocation since the service will show up in top or gnome-system-monitor with the name of the .jar file used in the invocation.
-
-**INVOCATION**
-
-* This should be set to the command-line statements used to start your server. <br />For example: `java -Xmn256M -Xms512M -Xmx1024M -jar craftbukkit.jar`
-
-**RAMDISK**
-
-* This should be set to "true" if you want your worlds to be loaded into a ramdisk. <br />It's highly recommended that you set up automatic backups while using this feature. <br />For our server, we simply set up a cron job that runs `/etc/init.d/minecraft worldbackup` every hour.
-
-**RD_SIZE**
-
-* This is the size you want the ramdisk to be. "m" is megabytes, "g" is kilobytes. Make sure the ramdisk is big enough to hold your worlds while still leaving enough RAM for the server itself (including core system processes, which should be given at least 256Mb in most situations)
-
-**Example:**
-
-    USERNAME="minecraft"
-    GROUPNAME="CodeProAdmins"
-    SCREEN_NAME="codecraft"
-    BUILD="b1597"
-    SERVICE="craftbukkit.jar"
-    INVOCATION="java -Xms512M -Xmx1024M -jar craftbukkit.jar"
-    RAMDISK="true"
-    RD_SIZE="128m"
-
-_**Note:**_ This script will implement automatic backups in the future as a toggleable feature (similar to the ramdisk feature).
+**Note:** This script will implement automatic backups in the future as a toggleable feature (similar to the ramdisk feature).
 
 <br />
 ### File Paths:

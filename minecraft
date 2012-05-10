@@ -322,27 +322,26 @@ backup_cksum() {
 
 }
 
-#---------------------------------+
-# rdiff-backup incremental backup |
-#---------------------------------+
-# Experimental feature: rdiff-backup
+#------------------------------------+
+# Experimental feature: rdiff-backup |
+#------------------------------------+
 # flags in use:
+# -v 6 -- Nice way to monitor what it is doing during development.
 # 
-# Then we typical 'src' and 'dest' variables here. Copying from the ramdisk to the disk.
 
 backup_incr() {
-  if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null                 # Service running?
+  if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null               # Service running?
   then
     if [ ! -d "$ROOT_PATH/$RD_DIR/worlds/$WORLD_NAME" ]                                 # World folders exist inside of ramdisk?
     then echo "Nothing in $ROOT_PATH/$RD_DIR to backup!"                                # If no, tell user there is nothing to copy
-    else echo "Copying changes to disk."                                                # If yes, tell user we are copying stuff and continue
+    else echo "Copying changes to disk."                                                # If yes, tell user we are copying stuff and c$
       mc_saveoff                                                                        # Turn off world saving while copying
-      sleep 2
-      as_user "rdiff-backup -v 6 $ROOT_PATH/$RD_DIR/worlds $ROOT_BUPATH/rdiff"   # See comment preceding this function for explanation
+      sleep 1
+      as_user "rdiff-backup -v 6 $REF_BUDIR $REF_PATH"
       mc_saveon                                                                         # Turn world saving back on!
     fi                                                                                  # Close if statement "world folder exist?"
-  else echo "$SERVICE not running, nothing to copy"                                       # Service not running message
-  fi                                                                                      # Close if statement "Service running?"
+  else echo "$SERVICE not running, nothing to copy"                                     # Service not running message
+  fi                                                                                    # Close if statement "Service running?"
 }
 
 #---------------+
@@ -663,14 +662,32 @@ case "$1" in
       fi
       ;;
 
+    incr)
+      REF_BUDIR="$ROOT_PATH/$RD_DIR/worlds"
+      REF_PATH="$ROOT_BUPATH/rdiff"
+      if ps -U $USERNAME x | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
+      then
+        as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $BACKUP_RD_START_MSG\"\015'"
+      fi
+
+      if mount -l -t $RD_TYPE | grep $ROOT_PATH/$RD_DIR > /dev/null
+      then
+        mc_saveoff
+        backup_incr
+        mc_saveon
+      else echo "Ramdisk not mounted, nothing to do."
+      fi
+      ;;
+
     *)
     echo ""
-    echo "Usage /etc/init.d/minecraft backup {worlds|ramdisk}"
+    echo "Usage /etc/init.d/minecraft backup {worlds|ramdisk|incr}"
     echo ""
     echo "Backup options:"
     echo ""
     echo "     worlds   - Backs up worlds to backup directory"
     echo "     ramdisk  - Backs up entire ramdisk directory to backup directory"
+    echo "     incr     - Incrementally copies ramdisk directory to rdiff backup directory"
     echo ""
     exit 1
     ;;

@@ -322,6 +322,28 @@ backup_cksum() {
 
 }
 
+#---------------------------------+
+# rdiff-backup incremental backup |
+#---------------------------------+
+# Experimental feature: rdiff-backup
+# flags in use:
+# 
+# Then we typical 'src' and 'dest' variables here. Copying from the ramdisk to the disk.
+
+backup_incr() {
+  if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null                 # Service running?
+  then
+    if [ ! -d "$ROOT_PATH/$RD_DIR/worlds/$WORLD_NAME" ]                                 # World folders exist inside of ramdisk?
+    then echo "Nothing in $ROOT_PATH/$RD_DIR to backup!"                                # If no, tell user there is nothing to copy
+    else echo "Copying changes to disk."                                                # If yes, tell user we are copying stuff and continue
+      mc_saveoff                                                                        # Turn off world saving while copying
+      sleep 2
+      as_user "rdiff-backup -v 6 $ROOT_PATH/$RD_DIR/worlds $ROOT_BUPATH/rdiff"   # See comment preceding this function for explanation
+      mc_saveon                                                                         # Turn world saving back on!
+    fi                                                                                  # Close if statement "world folder exist?"
+  else echo "$SERVICE not running, nothing to copy"                                       # Service not running message
+  fi                                                                                      # Close if statement "Service running?"
+}
 
 #---------------+
 # Links worlds  |

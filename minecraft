@@ -335,10 +335,7 @@ backup_incr() {
     if [ ! -d "$ROOT_PATH/$RD_DIR/worlds/$WORLD_NAME" ]                                 # World folders exist inside of ramdisk?
     then echo "Nothing in $ROOT_PATH/$RD_DIR to backup!"                                # If no, tell user there is nothing to copy
     else echo "Copying changes to disk."                                                # If yes, tell user we are copying stuff and c$
-      mc_saveoff                                                                        # Turn off world saving while copying
-      sleep 1
       as_user "rdiff-backup -v 6 $REF_BUDIR $REF_PATH"
-      mc_saveon                                                                         # Turn world saving back on!
     fi                                                                                  # Close if statement "world folder exist?"
   else echo "$SERVICE not running, nothing to copy"                                     # Service not running message
   fi                                                                                    # Close if statement "Service running?"

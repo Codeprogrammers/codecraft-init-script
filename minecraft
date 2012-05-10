@@ -581,13 +581,9 @@ mcrd_unload() {
         fi
       done
 
-<<<<<<< HEAD
-    fi                                                                      # Close if statement "Service running?" 
-=======
       mcrd_status="0"  # Ramdisk successfully unloaded, notify other functions of success
 
     fi
->>>>>>> develop
 
   else echo "Nothing to save, ramdisk not mounted at $ROOT_PATH/$RD_DIR"    # ramdisk not mounted, nothing to save
   fi

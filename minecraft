@@ -1,7 +1,6 @@
 #!/bin/bash
 # /etc/init.d/minecraft
 # version 0.4.3 2012-01-11 (YYYY-MM-DD)
-# modified version 0.5.1 2012-01-11 (YYYY-MM-DD)
 
 ### BEGIN INIT INFO
 # Provides:   minecraft
@@ -34,25 +33,15 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-# Modified by J.C. Doll "Paswaru"
-# 0.0.1 - FIX: Changed javwc filter to look for \.[0-9][0-9]. Other regex was interfearing with worlds that ended in a number (i.e. WorldVer5).
-# 0.1.0 - ADD: Support for Ram Disk Type (ramfs, tmpfs).
-# 0.2.0 - ADD: Support for multiple instances of minecraft server under different usernames.
-# 0.3.0 - ADD: Support for bukkit world-container setting.
-# 0.4.0 - ADD: Support for physical disk worlds to have thier own directory. (Ram Disk worlds need to be moved to $RD_WORLD_DIR).
-#              Moved check for $WORLD_NAME to mc_start and checks both $WORLD_DIR and $RD_WORLD_DIR.
-# 0.5.0 - ADD: Added support to auto create and remove $ROOT_PATH/$RD_DIR.
-# 0.5.1 - FIX: Made lockfile based on script name, fix for multiple instances of minecraft server.
-# 0.6.0 - ADD: Moved Settings to a configuration file in /etc/
 
 #Settings are in /etc/<SCRIPTNAME>.conf
 
 ############################[ Script Start]#############################
 
-scriptname=$(basename $0)
-lockfile="/var/lock/"$scriptname
+SCRIPTNAME="$(basename "$(test -L "$0" && readlink "$0" || echo "$0")")"
+lockfile="/var/lock/"$SCRIPTNAME
 
-echo "Reading settings from /etc/$SCRIPTNAME.conf"
+echo "Reading settings from /etc/$SCRIPTNAME.conf."
 configfile="/etc/$SCRIPTNAME.conf"
 configfile_secured="/tmp/$SCRIPTNAME.conf"
 
@@ -109,24 +98,23 @@ as_user() {
 mc_start() {
   if ps -U $USERNAME x | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
   then echo "Tried to start but $SERVICE was already running!"
-  else echo "Starting $SERVICE"
+  else echo "Starting $SERVICE."
 
     # Checking for the existance of the world using the name defined in server.properties
-    if [ ! -d "$ROOT_PATH/$WORLD_DIR/$WORLD_NAME" ] && [ ! -d "$ROOT_PATH/$RD_WORLD_DIR/$WORLD_NAME" ]
+    if [ ! -d "$ROOT_PATH/$WORLD_DIR/$WORLD_NAME" ]
       then 
         echo "Aborting service startup!"
-        echo "$WORLD_NAME is not in $ROOT_PATH/$WORLD_DIR or $ROOT_PATH/$RD_WORLD_DIR!"  # If no world exists, tell the user and abort
+        echo "$WORLD_NAME is not in $ROOT_PATH/$WORLD_DIR!"  # If no world exists, tell the user and abort
         exit 1
     fi
 
-    mc_link # link $WORLD_DIR and $RD_WORLD_DIR to $WORLD_CONTAINER
+    mc_link # link $WORLD_DIR to $WORLD_CONTAINER
 
     if [ $RAMDISK == 'true' ]
     then
       if mount -l -t $RD_TYPE | grep $ROOT_PATH/$RD_DIR > /dev/null
-      then echo "Ramdisk Loaded"
-        mcrd_load
-      else echo "Loading Ramdisk"
+      then mcrd_load
+      else
         mcrd_mount
         mcrd_load
       fi
@@ -163,7 +151,7 @@ mc_start() {
 
 mc_stop() {
   if ps -U $USERNAME x | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
-  then echo "$SERVICE is running... stopping."
+  then echo "$SERVICE is running. stopping."
 
     as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $STOP_MSG\"\015'" ; sleep 5
     as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-all\"\015'" ; sleep 10
@@ -173,7 +161,7 @@ mc_stop() {
   fi
 
   if ps -U $USERNAME x | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
-  then echo "$SERVICE could not be shut down... still running."
+  then echo "$SERVICE could not be shut down. still running."
   else echo "$SERVICE is shut down."
   fi
 }
@@ -189,7 +177,7 @@ mc_stop() {
 
 mc_saveoff() {
   if ps -U $USERNAME x | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
-  then echo "$SERVICE is running... suspending saves"
+  then echo "$SERVICE is running. suspending saves."
 
     as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $SAVE_OFF_MSG\"\015'"
     as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-off\"\015'"
@@ -210,7 +198,7 @@ mc_saveoff() {
 
 mc_saveon() {
   if ps -U $USERNAME x | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
-  then echo "$SERVICE is running... re-enabling saves"
+  then echo "$SERVICE is running. re-enabling saves"
 
     as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-on\"\015'"
     as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $SAVE_ON_MSG\"\015'"
@@ -228,7 +216,7 @@ mc_saveon() {
 #-----------------------------+
 
 backup() {
-  echo "Backing Up $REF_BUDIR"
+  echo "Backing Up $REF_BUDIR."
   cd $ROOT_BUPATH
 
   if [ ! -d $REF_BUDIR ] 
@@ -253,10 +241,10 @@ backup() {
   then
     TIME="$TIME"_`date "+%S"`                             # Appened the current seconds time to $bu_time
     as_user "mkdir $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
-    as_user "cp -a $REF_PATH/* $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
+    as_user "cp -aL $REF_PATH/* $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
   else
     as_user "mkdir $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
-    as_user "cp -a $REF_PATH/* $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
+    as_user "cp -aL $REF_PATH/* $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
   fi
 
   echo "Backup finished"
@@ -274,7 +262,7 @@ backup() {
 
 backup_cksum() {
 
-  echo "Running checksum..."
+  echo "Running checksum."
   cd $ROOT_BUPATH
 
   if [ -d chksum ]
@@ -310,10 +298,10 @@ backup_cksum() {
     as_user "mkdir $CS_PATH/reference ; mkdir $CS_PATH/backup"
   fi
 
-  as_user "cd $REF_PATH ; tar -cf checksum.tar *"
+  as_user "cd $REF_PATH ; tar -chf checksum.tar *"
   as_user "mv $REF_PATH/checksum.tar $CS_PATH/reference"
 
-  as_user "cd $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME ; tar -cf checksum.tar *"
+  as_user "cd $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME ; tar -chf checksum.tar *"
   as_user "mv $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME/checksum.tar $CS_PATH/backup"
 
   cd $CS_PATH
@@ -324,7 +312,7 @@ backup_cksum() {
   # Compare the values of the checksums
   if [ "$REF_checksum" = "$BACKUP_checksum" ]
   then
-    echo "Backup Successful"
+    echo "Backup Successful."
     as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $BACKUP_DONE_MSG\"\015'"
   else
     echo "Backup failed! The reference and backup contents do not match!"
@@ -378,14 +366,14 @@ backup_incr() {
 # Links worlds  |
 #---------------+
 #  Checks status of service; if service is not running, attempts to link worlds.
-#  Appends ".old" to symbolic links in $WORLD_CONTAINER which point to $WORLD_DIR and $RD_WORLD_DIR.
-#  Creates symbolic links to $WORLD_DIR and $RD_WORLD_DIR in $WORLD_CONTAINER.
+#  Appends ".old" to symbolic links in $WORLD_CONTAINER which point to $WORLD_DIR and $WORLD_DIR.
+#  Creates symbolic links to $WORLD_DIR in $WORLD_CONTAINER.
 #---------------+
 
 mc_link() {
   if ps -U $USERNAME x | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null   # Is service running?
-  then echo "Cannot load ramdisk, $SERVICE is running! "
-  else echo "Loading ramdisk..."
+  then echo "Cannot link worlds, $SERVICE is running! "
+  else echo "Linking worlds."
 
     # Process worlds in $WORLD_DIR
     cd $ROOT_PATH/$WORLD_DIR                                                 # cd to $ROOT_PATH/$WORLD_DIR
@@ -408,29 +396,6 @@ mc_link() {
         fi
       fi
     done
-    
-    # Process worlds in $RD_WORLD_DIR (This will be overridden later if $RAMDISK is true
-    cd $ROOT_PATH/$RD_WORLD_DIR                                              
-
-    for dir in *                                                             # For each folder in $ROOT_PATH/$RD_WORLD_DIR,
-    do
-
-      if [ ! -d "$WORLD_CONTAINER/$dir" ]                                    # We are going to make sure it does not reside on the $WORLD_CONTAINER"
-      then javwc=`expr match "$dir" '.*\.[0-9][0-9]'`                        # Expression to filter out the world backups (ignore something ending with a number)
-
-        if [ -d "$dir" ] && [ -f "$ROOT_PATH/$RD_WORLD_DIR/$dir/level.dat" ] && [ $javwc -eq 0 ]           # Make sure it is a directory, and that it has a level.dat file in it, and the it IS NOT a backup
-        then
-          chown -R $USERNAME:$GROUPNAME "$ROOT_PATH/$RD_WORLD_DIR/$dir"
-
-          if [ -d "$WORLD_CONTAINER/$dir" ]                                                                # Are there folders or symlinks already in $WORLD_CONTAINER?
-          then as_user "mv $WORLD_CONTAINER/$dir '$WORLD_CONTAINER/$dir'.old"                              # Rename them with the suffix ".old"
-          fi
-          as_user "ln -s $ROOT_PATH/$RD_WORLD_DIR/$dir $WORLD_CONTAINER/$dir"                              # Setup the symlinks to the worlds in $RD_WORLD_DIR
-
-        fi
-      fi
-    done
-    
   fi                                                                          # Close if statement "running?"
 }
 
@@ -447,7 +412,7 @@ mc_link() {
 
 mcrd_mount() {
   if mount -l -t $RD_TYPE | grep $ROOT_PATH/$RD_DIR > /dev/null
-  then echo "Ramdisk already mounted"
+  then echo "Ramdisk already mounted!"
   else
 
     if [ ! -d $ROOT_PATH/$RD_DIR ]
@@ -456,14 +421,14 @@ mcrd_mount() {
     
     if [ ! -d $ROOT_PATH/$RD_DIR ]
     then echo "Aborting service startup! $ROOT_PATH/$RD_DIR does not exist!" ; exit 1
-    else echo "Mounting ramdisk at $ROOT_PATH/$RD_DIR"
+    else echo "Mounting ramdisk at $ROOT_PATH/$RD_DIR."
       mount -t $RD_TYPE -o size=$RD_SIZE $RD_TYPE $ROOT_PATH/$RD_DIR
       sleep 3
       chown $USERNAME:$GROUPNAME $ROOT_PATH/$RD_DIR   # Make sure that $USERNAME and members of $GROUPNAME can access the data in the ramdisk
     fi
 
     if mount -l -t $RD_TYPE | grep $ROOT_PATH/$RD_DIR > /dev/null
-    then echo "Ramdisk mounted at $ROOT_PATH/$RD_DIR"
+    then echo "Ramdisk mounted at $ROOT_PATH/$RD_DIR."
     else echo "Aborting service startup! Could not mount Ramdisk!" ; exit 1
     fi
   fi
@@ -478,22 +443,36 @@ mcrd_mount() {
 #----------------------+
 
 mcrd_unmount() {
-  if mount -l -t $RD_TYPE | grep $ROOT_PATH/$RD_DIR > /dev/null
-  then echo "Ramdisk mounted at $ROOT_PATH/$RD_DIR.... unmounting"
 
-    while mount -l -t $RD_TYPE | grep $ROOT_PATH/$RD_DIR > /dev/null
-    do
-      sleep 2
-      umount $ROOT_PATH/$RD_DIR
-      sleep 1
-    done
-    
-    if [ ! "$(ls -A $ROOT_PATH/$RD_DIR)" ]  #  If $ROOT_PATH/$RD_DIR is empty remove it.
-      then as_user "rmdir $ROOT_PATH/$RD_DIR"
+  if ps -U $USERNAME x | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null   # Is service running?
+  then echo "Can't unmount ramdisk, $SERVICE is still running!"
+  
+  elif [ "$mcrd_status" = "1" ]
+  then echo "Can't unmount ramdisk, ramdisk not unloaded!"
+  
+  elif [ "$mcrd_status" = "0" ]
+  then
+  
+    if mount -l -t $RD_TYPE | grep $ROOT_PATH/$RD_DIR > /dev/null
+    then echo "Ramdisk mounted at $ROOT_PATH/$RD_DIR. unmounting."
+
+      while mount -l -t $RD_TYPE | grep $ROOT_PATH/$RD_DIR > /dev/null
+      do
+        sleep 2
+        umount $ROOT_PATH/$RD_DIR
+        sleep 1
+      done
+      
+      if [ ! "$(ls -A $ROOT_PATH/$RD_DIR)" ]  #  If $ROOT_PATH/$RD_DIR is empty remove it.
+        then as_user "rmdir $ROOT_PATH/$RD_DIR"
+      fi
+      echo "Ramdisk unmounted."
+
+    else echo "Ramdisk was not mounted at $ROOT_PATH/$RD_DIR."
     fi
-    echo "Ramdisk unmounted"
-
-  else echo "Ramdisk was not mounted at $ROOT_PATH/$RD_DIR"
+  
+  else echo "Could not unmount ramdisk."
+  
   fi
 }
 
@@ -502,32 +481,32 @@ mcrd_unmount() {
 # Loads ramdisk |
 #---------------+
 #  Checks status of service; if service is not running, attempts to load ramdisk.
-#  Loads all worlds in $RD_WORLD_DIR into ramdisk under "worlds" directory.
-#  Appends ".old" to symbolic links in $WORLD_CONTAINER which point to $RD_WORLD_DIR.
+#  Loads all worlds in $WORLD_DIR into ramdisk under "worlds" directory.
+#  Appends ".old" to symbolic links in $WORLD_CONTAINER which point to $WORLD_DIR.
 #  Creates symbolic links to $RD_DIR/worlds in $WORLD_CONTAINER.
 #---------------+
 
 mcrd_load() {
   if ps -U $USERNAME x | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null   # Is service running?
   then echo "Cannot load ramdisk, $SERVICE is running! "
-  else echo "Loading ramdisk..."
+  else echo "Loading ramdisk."
 
     if [ ! -d "$ROOT_PATH/$RD_DIR/worlds" ]
     then
       as_user "mkdir $ROOT_PATH/$RD_DIR/worlds"
     fi
+  
+    cd $ROOT_PATH/$WORLD_DIR                                                # If the world does exist, cd to $ROOT_PATH/$WORLD_DIR
 
-    cd $ROOT_PATH/$RD_WORLD_DIR                                             # If the world does exist, cd to $ROOT_PATH/$RD_WORLD_DIR
-
-      for dir in *                                                          # For each folder in $ROOT_PATH/$RD_WORLD_DIR,
+      for dir in *                                                          # For each folder in $ROOT_PATH/$WORLD_DIR,
       do
 
         if [ ! -d "$ROOT_PATH/$RD_DIR/worlds/$dir" ]                        # We are going to make sure it does not reside on the RAMDISK
         then javwc=`expr match "$dir" '.*\.[0-9][0-9]'`                     # Expression to filter out the world backups (ignore something ending with a number)
 
-          if [ -d "$dir" ] && [ -f "$ROOT_PATH/$RD_WORLD_DIR/$dir/level.dat" ] && [ $javwc -eq 0 ]          # Make sure it is a directory, and that it has a level.dat file in it, and the it IS NOT a backup
+          if [ -d "$dir" ] && [ -f "$ROOT_PATH/$WORLD_DIR/$dir/level.dat" ] && [ $javwc -eq 0 ]             # Make sure it is a directory, and that it has a level.dat file in it, and the it IS NOT a backup
           then
-            cp -R $dir $ROOT_PATH/$RD_DIR/worlds                                                            # Copy the world from $ROOT_PATH/$RD_WORLD_DIR to $ROOT_PATH/$RD_DIR
+            cp -R $dir $ROOT_PATH/$RD_DIR/worlds                                                            # Copy the world from $ROOT_PATH/$WORLD_DIR to $ROOT_PATH/$RD_DIR
             chown -R $USERNAME:$GROUPNAME $ROOT_PATH/$RD_DIR/worlds
 
             if [ -d "$WORLD_CONTAINER/$dir" ]                                                               # Are there folders or symlinks already in $WORLD_CONTAINER?
@@ -538,6 +517,7 @@ mcrd_load() {
           fi
         fi
       done
+    echo "Ramdisk Loaded."
   fi                                                                          # Close if statement "running?"
 }
 
@@ -545,10 +525,10 @@ mcrd_load() {
 #-----------------+
 # Unloads ramdisk |
 #-----------------+
-#  Appends [date +"-%F-%H.%M"] to worlds in $RD_WORLD_DIR
-#  Copies worlds from ramdisk back to $RD_WORLD_DIR
+#  Appends [date +"-%F-%H.%M"] to worlds in $WORLD_DIR
+#  Copies worlds from ramdisk back to $WORLD_DIR
 #  Deletes symbolic links in $WORLD_CONTAINER which point to worlds on ramdisk.
-#  Removes '.old' from symbolic links in $WORLD_CONTAINER which point to $RD_WORLD_DIR.
+#  Removes '.old' from symbolic links in $WORLD_CONTAINER which point to $WORLD_DIR.
 #-----------------+
 
 mcrd_unload() {
@@ -557,6 +537,9 @@ mcrd_unload() {
 
     if ps -U $USERNAME x | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null   # Is service running?
     then echo "Can't unload ramdisk, $SERVICE is still running!"
+      
+      mcrd_status="1"  # Could not unload ramdisk, notify other functions of failure
+    
     else
 
       if [ ! -d "$ROOT_PATH/$RD_DIR/worlds/$WORLD_NAME" ]                     # Check if $WORLD_NAME (whatevere it was named in server.properties) exists in $ROOT_PATH/$RD_DIR
@@ -572,14 +555,14 @@ mcrd_unload() {
           if [ -d "$dir" ] && [ -f "$dir/level.dat" ]                         # Make sure it is a directory and verify it is a world by looking for "level.dat" inside of it.
           then
 
-            if [ -d "$ROOT_PATH/$RD_WORLD_DIR/$dir" ]                                             # Now we check to see if the world folder we found already exists in the $ROOT_PATH/$RD_WORLD_DIR
+            if [ -d "$ROOT_PATH/$WORLD_DIR/$dir" ]                                             # Now we check to see if the world folder we found already exists in the $ROOT_PATH/$WORLD_DIR
             then
               echo "Renaming $dir to $dir$filedate"                                               # We tell the user what we are going to do
-              as_user "mv $ROOT_PATH/$RD_WORLD_DIR/$dir $ROOT_PATH/$RD_WORLD_DIR/$dir$filedate"   # Then rename the found folder with a datestamp on the end of it's name
+              as_user "mv $ROOT_PATH/$WORLD_DIR/$dir $ROOT_PATH/$WORLD_DIR/$dir$filedate"   # Then rename the found folder with a datestamp on the end of it's name
             fi
 
             echo "$dir being copied to disk"                                                # Tell the user we are copying the RAMDISK
-            as_user "cp -R $ROOT_PATH/$RD_DIR/worlds/$dir $ROOT_PATH/$RD_WORLD_DIR"         # Copy the world from $ROOT_PATH/$RD_DIR to $ROOT_PATH/$RD_WORLD_DIR
+            as_user "cp -R $ROOT_PATH/$RD_DIR/worlds/$dir $ROOT_PATH/$WORLD_DIR"         # Copy the world from $ROOT_PATH/$RD_DIR to $ROOT_PATH/$WORLD_DIR
 
           else echo "Nothing copied from ramdisk."                            # If no world folders are found, we tell the user.
           fi
@@ -598,7 +581,13 @@ mcrd_unload() {
         fi
       done
 
+<<<<<<< HEAD
     fi                                                                      # Close if statement "Service running?" 
+=======
+      mcrd_status="0"  # Ramdisk successfully unloaded, notify other functions of success
+
+    fi
+>>>>>>> develop
 
   else echo "Nothing to save, ramdisk not mounted at $ROOT_PATH/$RD_DIR"    # ramdisk not mounted, nothing to save
   fi
@@ -611,7 +600,7 @@ mcrd_unload() {
 #  stop:          Stops the service
 #  restart:       Restarts the service (if not running, starts the service)
 #  status:        Tells user whether service is running or not
-#  worldbackup:   Runs a backup for worlds in either $RD_WORLD_DIR or $RD_DIR/worlds
+#  worldbackup:   Runs a backup for worlds in either $WORLD_DIR or $RD_DIR/worlds
 #  rdbackup:      Makes a backup of the entire $RD_DIR directory
 #---------------------+
 
@@ -638,7 +627,7 @@ case "$1" in
       mc_stop
       mc_start
     else
-      echo "$SERVICE was not running... "
+      echo "$SERVICE was not running. "
       mc_start
     fi
     ;;
@@ -655,11 +644,11 @@ case "$1" in
     worlds)
       DATE=$(date "+%Y-%m-%d")
       TIME=$(date "+%H-%M")
-      REF_BUDIR="$RD_WORLD_DIR"
-      CS_PATH="$ROOT_BUPATH/chksum/$RD_WORLD_DIR"
+      REF_BUDIR="$WORLD_DIR"
+      CS_PATH="$ROOT_BUPATH/chksum/$WORLD_DIR"
       if [ $RAMDISK == 'true' ] && mount -l -t $RD_TYPE | grep $ROOT_PATH/$RD_DIR > /dev/null
       then REF_PATH="$ROOT_PATH/$RD_DIR/worlds"
-      else REF_PATH="$ROOT_PATH/$RD_WORLD_DIR"
+      else REF_PATH="$ROOT_PATH/$WORLD_DIR"
       fi
 
       if ps -U $USERNAME x | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null

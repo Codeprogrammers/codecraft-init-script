@@ -329,8 +329,8 @@ backup_cksum() {
 
 mc_link() {
   if ps -U $USERNAME x | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null   # Is service running?
-  then echo "Cannot link worlds to ramdisk, $SERVICE is running! "
-  else echo "Linking worlds to ramdisk..."
+  then echo "Cannot link worlds to $WORLD_CONTAINER, $SERVICE is running! "
+  else echo "Linking worlds to $WORLD_CONTAINER ..."
 
     # Process worlds in $WORLD_DIR
     cd $ROOT_PATH/$WORLD_DIR                                                 # cd to $ROOT_PATH/$WORLD_DIR

@@ -237,10 +237,31 @@ backup() {
   then
     TIME="$TIME"_`date "+%S"`                             # Appened the current seconds time to $bu_time
     as_user "mkdir $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
-    as_user "cp -aL $REF_PATH/* $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
+    cd $REF_PATH
+    
+    for dir in $REF_PATH/*
+    do
+    
+      if [ ! -d "$dir".old ]
+      then
+        as_user "cp -aL $REF_PATH/$dir $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
+      fi
+      
+    done
+
   else
     as_user "mkdir $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
-    as_user "cp -aL $REF_PATH/* $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
+    cd $REF_PATH
+    
+    for dir in $REF_PATH/*
+    do
+    
+      if [ ! -d "$dir".old ]
+      then
+        as_user "cp -aL $REF_PATH/$dir $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
+      fi
+      
+    done
   fi
 
   echo "Backup finished"
@@ -294,7 +315,7 @@ backup_cksum() {
     as_user "mkdir $CS_PATH/reference ; mkdir $CS_PATH/backup"
   fi
 
-  as_user "cd $REF_PATH ; tar -chf checksum.tar *"
+  as_user "cd $REF_PATH ; tar -chf checksum.tar * --exclude=*.old"
   as_user "mv $REF_PATH/checksum.tar $CS_PATH/reference"
 
   as_user "cd $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME ; tar -chf checksum.tar *"

@@ -112,13 +112,8 @@ mc_start() {
 
     if [ $RAMDISK == 'true' ]
     then
-      if mount -l -t $RD_TYPE | grep $ROOT_PATH/$RD_DIR > /dev/null
-      then echo "Ramdisk Loaded"
-        mcrd_load
-      else echo "Loading Ramdisk"
-        mcrd_mount
-        mcrd_load
-      fi
+      mcrd_mount
+      mcrd_load
     fi
 
     as_user "cd $ROOT_PATH/$SERVER_DIR/$BUILD && screen -dmS $SCREEN_NAME $INVOCATION" ; sleep 7

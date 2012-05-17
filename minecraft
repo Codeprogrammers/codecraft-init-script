@@ -112,12 +112,8 @@ mc_start() {
 
     if [ $RAMDISK == 'true' ]
     then
-      if mount -l -t $RD_TYPE | grep $ROOT_PATH/$RD_DIR > /dev/null
-      then mcrd_load
-      else
-        mcrd_mount
-        mcrd_load
-      fi
+      mcrd_mount
+      mcrd_load
     fi
 
     as_user "cd $ROOT_PATH/$SERVER_DIR/$BUILD && screen -dmS $SCREEN_NAME $INVOCATION" ; sleep 7
@@ -154,8 +150,8 @@ mc_stop() {
   then echo "$SERVICE is running. stopping."
 
     as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"say $STOP_MSG\"\015'" ; sleep 5
-    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-all\"\015'" ; sleep 10
-    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"stop\"\015'" ; sleep 3
+    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"save-all\"\015'" ; sleep 5
+    as_user "screen -p 0 -S $SCREEN_NAME -X eval 'stuff \"stop\"\015'" ; sleep 5
 
   else echo "$SERVICE was not running."
   fi
@@ -241,10 +237,31 @@ backup() {
   then
     TIME="$TIME"_`date "+%S"`                             # Appened the current seconds time to $bu_time
     as_user "mkdir $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
-    as_user "cp -aL $REF_PATH/* $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
+    cd $REF_PATH
+    
+    for dir in *
+    do
+    
+      if [[ $dir != *.old ]]
+      then
+        as_user "cp -aL $REF_PATH/$dir $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
+      fi
+      
+    done
+
   else
     as_user "mkdir $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
-    as_user "cp -aL $REF_PATH/* $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
+    cd $REF_PATH
+    
+    for dir in *
+    do
+    
+      if [[ $dir != *.old ]]
+      then
+        as_user "cp -aL $REF_PATH/$dir $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
+      fi
+      
+    done
   fi
 
   echo "Backup finished"
@@ -298,7 +315,7 @@ backup_cksum() {
     as_user "mkdir $CS_PATH/reference ; mkdir $CS_PATH/backup"
   fi
 
-  as_user "cd $REF_PATH ; tar -chf checksum.tar *"
+  as_user "cd $REF_PATH ; tar -chf checksum.tar * --exclude=*.old"
   as_user "mv $REF_PATH/checksum.tar $CS_PATH/reference"
 
   as_user "cd $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME ; tar -chf checksum.tar *"
@@ -351,8 +368,8 @@ backup_incr() {
 
 mc_link() {
   if ps -U $USERNAME x | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null   # Is service running?
-  then echo "Cannot link worlds, $SERVICE is running! "
-  else echo "Linking worlds."
+  then echo "Cannot link worlds to $WORLD_CONTAINER, $SERVICE is running! "
+  else echo "Linking worlds to $WORLD_CONTAINER ..."
 
     # Process worlds in $WORLD_DIR
     cd $ROOT_PATH/$WORLD_DIR                                                 # cd to $ROOT_PATH/$WORLD_DIR
@@ -521,9 +538,8 @@ mcrd_unload() {
     
     else
 
-      if [ ! -d "$ROOT_PATH/$RD_DIR/worlds/$WORLD_NAME" ]                     # Check if $WORLD_NAME (whatevere it was named in server.properties) exists in $ROOT_PATH/$RD_DIR
-      then echo "Nothing in $ROOT_PATH/$RD_DIR to backup!"                    # Not found! Warn user!
-      else echo "Saving ramdisk to disk."                                     # Else we have found something and will continue with the regime, warn user we are beginning
+      if ls $ROOT_PATH/$RD_DIR/worlds/* | grep level.dat > /dev/null          # Check if $WORLD_NAME (whatevere it was named in server.properties) exists in $ROOT_PATH/$RD_DIR
+      then echo "Saving ramdisk to disk."                                     # Else we have found something and will continue with the regime, warn user we are beginning
 
         cd $ROOT_PATH/$RD_DIR/worlds                                          # Make sure we are in the $ROOT_PATH/$RD_DIR for the next series of commands
         filedate=$(date +"-%F-%H.%M")                                         # Set up our datestamp here.
@@ -547,6 +563,8 @@ mcrd_unload() {
           fi
 
         done                                                                  # END for loop (directory inside $ROOT_PATH/$RD_DIR)
+
+      else echo "Nothing in $ROOT_PATH/$RD_DIR to backup!"                    # Not found! Warn user!
       fi
 
       cd $WORLD_CONTAINER
@@ -622,10 +640,7 @@ case "$1" in
       TIME=$(date "+%H-%M")
       REF_BUDIR="$WORLD_DIR"
       CS_PATH="$ROOT_BUPATH/chksum/$WORLD_DIR"
-      if [ $RAMDISK == 'true' ] && mount -l -t $RD_TYPE | grep $ROOT_PATH/$RD_DIR > /dev/null
-      then REF_PATH="$ROOT_PATH/$RD_DIR/worlds"
-      else REF_PATH="$ROOT_PATH/$WORLD_DIR"
-      fi
+      REF_PATH="$ROOT_PATH/$WORLD_DIR"
 
       if ps -U $USERNAME x | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
       then

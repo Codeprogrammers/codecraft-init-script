@@ -503,9 +503,8 @@ mcrd_unload() {
     
     else
 
-      if [ ! -d "$ROOT_PATH/$RD_DIR/worlds/$WORLD_NAME" ]                     # Check if $WORLD_NAME (whatevere it was named in server.properties) exists in $ROOT_PATH/$RD_DIR
-      then echo "Nothing in $ROOT_PATH/$RD_DIR to backup!"                    # Not found! Warn user!
-      else echo "Saving ramdisk to disk."                                     # Else we have found something and will continue with the regime, warn user we are beginning
+      if ls $ROOT_PATH/$RD_DIR/worlds/* | grep level.dat > /dev/null          # Check if $WORLD_NAME (whatevere it was named in server.properties) exists in $ROOT_PATH/$RD_DIR
+      then echo "Saving ramdisk to disk."                                     # Else we have found something and will continue with the regime, warn user we are beginning
 
         cd $ROOT_PATH/$RD_DIR/worlds                                          # Make sure we are in the $ROOT_PATH/$RD_DIR for the next series of commands
         filedate=$(date +"-%F-%H.%M")                                         # Set up our datestamp here.
@@ -529,6 +528,8 @@ mcrd_unload() {
           fi
 
         done                                                                  # END for loop (directory inside $ROOT_PATH/$RD_DIR)
+
+      else echo "Nothing in $ROOT_PATH/$RD_DIR to backup!"                    # Not found! Warn user!
       fi
 
       cd $WORLD_CONTAINER

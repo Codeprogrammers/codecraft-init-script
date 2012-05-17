@@ -622,11 +622,8 @@ case "$1" in
       DATE=$(date "+%Y-%m-%d")
       TIME=$(date "+%H-%M")
       REF_BUDIR="$WORLD_DIR"
-      CS_PATH="$ROOT_BUPATH/chksum/$RD_WORLD_DIR"
-      if [ $RAMDISK == 'true' ] && mount -l -t $RD_TYPE | grep $ROOT_PATH/$RD_DIR > /dev/null
-      then REF_PATH="$ROOT_PATH/$RD_DIR/worlds"
-      else REF_PATH="$ROOT_PATH/$WORLD_DIR"
-      fi
+      CS_PATH="$ROOT_BUPATH/chksum/$WORLD_DIR"
+      REF_PATH="$ROOT_PATH/$WORLD_DIR"
 
       if ps -U $USERNAME x | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
       then

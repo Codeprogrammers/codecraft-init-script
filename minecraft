@@ -239,10 +239,10 @@ backup() {
     as_user "mkdir $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
     cd $REF_PATH
     
-    for dir in $REF_PATH/*
+    for dir in *
     do
     
-      if [ ! -d "$dir".old ]
+      if [[ $dir != *.old ]]
       then
         as_user "cp -aL $REF_PATH/$dir $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
       fi
@@ -253,10 +253,10 @@ backup() {
     as_user "mkdir $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
     cd $REF_PATH
     
-    for dir in $REF_PATH/*
+    for dir in *
     do
     
-      if [ ! -d "$dir".old ]
+      if [[ $dir != *.old ]]
       then
         as_user "cp -aL $REF_PATH/$dir $ROOT_BUPATH/$REF_BUDIR/$DATE/$TIME"
       fi

@@ -344,7 +344,7 @@ backup_cksum() {
 #------------------------------------+
 # flags in use:
 # -v 6 -- Nice way to monitor what it is doing during development.
-# 
+#
 
 backup_incr() {
   if ps ax | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null               # Service running?
@@ -356,6 +356,33 @@ backup_incr() {
     fi                                                                                  # Close if statement "world folder exist?"
   else echo "$SERVICE not running, nothing to copy"                                     # Service not running message
   fi                                                                                    # Close if statement "Service running?"
+}
+
+#--------------------------------------------+
+# Experimental feature: rdiff-backup restore |
+#--------------------------------------------+
+# flags in use:
+# -v 6 -- Nice way to monitor what it is doing during development.
+#
+
+backup_incr_restore() {
+  if [ -d "$REF_BUDIR" ]
+  then
+    echo "Do you want to overwrite the existing contents?"
+    echo "(Please enter the number next to your slection)"
+    select yn in "No" "No" "Yes" "No" "No"; do
+      case $yn in
+        "Yes" )
+          echo "We are going to remove the directory at $REF_BUDIR"
+          echo "$timeframe"
+          echo "$REF_PATH"
+          echo "$REF_BUDIR"
+#          as_user "rdiff-backup -v 6 -r $timeframe $REF_PATH $REF_BUDIR"
+          break;;
+        "No" ) exit;;
+      esac
+    done
+  fi
 }
 
 #---------------+
@@ -705,6 +732,30 @@ case "$1" in
     ;;
   esac
   ;;
+
+  restore)
+    REF_BUDIR="$ROOT_PATH/$RD_DIR/worlds"
+    REF_PATH="$ROOT_BUPATH/rdiff"
+    if [ -z "$2" ]
+    then
+      echo ""
+      echo "You will need to specify a time frame"
+      echo ""
+      echo "Your options include:"
+      echo "An interval followed by s, m, h, D, W, M or Y or a series of such pairs"
+      echo "      eg: 1h78m indicates a time that was 1 hour and 78 minutes ago"
+      echo "A date in the following format: YYY/MM/DD, YYY-MM-DD, MM/DD/YYYY or MM-DD-YYYY"
+      echo "      (This will be the 00:00 of this date.)"
+      echo "Please see 'man rdiff-backup' for more time formats"
+      echo ""
+    elif [ 0 == 1 ] #ps -U $USERNAME x | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
+    then
+      echo "Please shutdown your server!"
+    else
+      timeframe="$2"
+      backup_incr_restore
+    fi
+    ;;
 
   *)
   echo ""

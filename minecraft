@@ -749,7 +749,7 @@ case "$1" in
       echo "      (This will be the 00:00 of this date.)"
       echo "Please see 'man rdiff-backup' for more time formats"
       echo ""
-    elif [ 0 == 1 ] #ps -U $USERNAME x | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
+    elif ps -U $USERNAME x | grep -v grep | grep -v -i SCREEN | grep $SERVICE > /dev/null
     then
       echo "Please shutdown your server!"
     else

@@ -343,7 +343,7 @@ backup_cksum() {
 # Experimental feature: rdiff-backup |
 #------------------------------------+
 # flags in use:
-# -v 6 -- Nice way to monitor what it is doing during development.
+# 
 #
 
 backup_incr() {
@@ -352,7 +352,7 @@ backup_incr() {
     if [ ! -d "$ROOT_PATH/$RD_DIR/worlds/$WORLD_NAME" ]                                 # World folders exist inside of ramdisk?
     then echo "Nothing in $ROOT_PATH/$RD_DIR to backup!"                                # If no, tell user there is nothing to copy
     else echo "Copying changes to disk."                                                # If yes, tell user we are copying stuff and c$
-      as_user "rdiff-backup -v 6 $REF_BUDIR $REF_PATH"
+      as_user "rdiff-backup $REF_BUDIR $REF_PATH"
     fi                                                                                  # Close if statement "world folder exist?"
   else echo "$SERVICE not running, nothing to copy"                                     # Service not running message
   fi                                                                                    # Close if statement "Service running?"
@@ -362,6 +362,7 @@ backup_incr() {
 # Experimental feature: rdiff-backup restore |
 #--------------------------------------------+
 # flags in use:
+# --force -- Causes files to be removed or overwritten
 # -v 6 -- Nice way to monitor what it is doing during development.
 #
 
@@ -373,11 +374,11 @@ backup_incr_restore() {
     select yn in "No" "No" "Yes" "No" "No"; do
       case $yn in
         "Yes" )
-          echo "We are going to remove the directory at $REF_BUDIR"
+          echo "We are going to overwrite the directories within $REF_BUDIR"
           echo "$timeframe"
           echo "$REF_PATH"
           echo "$REF_BUDIR"
-#          as_user "rdiff-backup -v 6 -r $timeframe $REF_PATH $REF_BUDIR"
+          as_user "rdiff-backup -v 6 --force -r $timeframe $REF_PATH $REF_BUDIR"
           break;;
         "No" ) exit;;
       esac
@@ -734,7 +735,7 @@ case "$1" in
   ;;
 
   restore)
-    REF_BUDIR="$ROOT_PATH/$RD_DIR/worlds"
+    REF_BUDIR="$ROOT_PATH/worlds"
     REF_PATH="$ROOT_BUPATH/rdiff"
     if [ -z "$2" ]
     then
